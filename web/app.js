@@ -3,21 +3,15 @@
 
   var CELL_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2", "D1", "D2"];
 
-  // Reading-order page number for each cell — also the public JSON/.md key
-  // (see PAGE_TO_CELL): the import/export format addresses pages by number
-  // ("1".."8"), never by internal grid coordinate. Mirrors
-  // foldbook/schema.py's PAGE_NUMBERS.
+  // Reading-order page number for each cell — also the public .md heading
+  // key (see PAGE_TO_CELL): Import/Export MD address pages by number
+  // ("1".."8"), never by internal grid coordinate.
   var PAGE_NUMBERS = { A1: 8, A2: 7, B1: 1, B2: 6, C1: 2, C2: 5, D1: 3, D2: 4 };
   var PAGE_TO_CELL = {};
   CELL_ORDER.forEach(function (name) {
     PAGE_TO_CELL[String(PAGE_NUMBERS[name])] = name;
   });
 
-  /* DEMO_CONTENT_START
-  Keep this object byte-identical to ../examples/demo-content.json.
-  It is duplicated here (rather than fetched) because fetch() is blocked
-  against file:// URLs, and this editor must work opened directly from disk.
-  */
   var DEMO_CONTENT = {
     "1": "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.",
     "2": "Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat.",
@@ -28,7 +22,6 @@
     "7": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
     "8": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
   };
-  /* DEMO_CONTENT_END */
 
   function cellEl(name) {
     return document.getElementById("cell-" + name);
@@ -50,19 +43,7 @@
     refreshStaging();
   }
 
-  // A "template" fills exactly the page currently selected in the staging
-  // dropdown and blanks the rest, same as loadDemo but with generated
-  // content instead of the fixed Lorem Ipsum.
-  function applyTemplate(text) {
-    var targetCell = document.getElementById("staging-cell").value;
-    CELL_ORDER.forEach(function (name) {
-      cellEl(name).value = name === targetCell ? text : "";
-    });
-    renderAllCells();
-    refreshStaging();
-  }
-
-  // --- Print rendering: bold/italic/lists, mirrors foldbook/markdown_lite.py ---
+  // --- Print rendering: bold/italic/lists, dividers ---
 
   function escapeHtml(s) {
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -226,91 +207,6 @@
     renderCell(name);
   }
 
-  function capitalize(s) {
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }
-
-  function mondayOf(date) {
-    var d = new Date(date);
-    var day = d.getDay(); // 0 = Sunday .. 6 = Saturday
-    var diff = day === 0 ? -6 : 1 - day;
-    d.setDate(d.getDate() + diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-
-  var WEEKDAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-  function pad2(n) {
-    return String(n).padStart(2, "0");
-  }
-
-  // 7 equal-height rows separated by dashed dividers (see markdown_lite's
-  // "---" divider support), one per day: "Mon 09/14".
-  function loadWeekTemplate() {
-    var monday = mondayOf(new Date());
-    var rows = [];
-    for (var i = 0; i < 7; i++) {
-      var d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      rows.push(WEEKDAY_ABBR[i] + " " + pad2(d.getMonth() + 1) + "/" + pad2(d.getDate()));
-    }
-    applyTemplate(rows.join("\n---\n"));
-  }
-
-  // Monday-start weeks, padded with null on both ends so every row has 7 cells.
-  function monthMatrix(year, monthIndex) {
-    var first = new Date(year, monthIndex, 1);
-    var daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-    var startOffset = (first.getDay() + 6) % 7; // Monday = 0
-    var cells = [];
-    for (var i = 0; i < startOffset; i++) cells.push(null);
-    for (var day = 1; day <= daysInMonth; day++) cells.push(day);
-    while (cells.length % 7 !== 0) cells.push(null);
-    var rows = [];
-    for (var j = 0; j < cells.length; j += 7) rows.push(cells.slice(j, j + 7));
-    return rows;
-  }
-
-  function loadMonthTemplate() {
-    var now = new Date();
-    var monthName = capitalize(now.toLocaleDateString("ru-RU", { month: "long" }));
-    var year = now.getFullYear();
-    var rows = monthMatrix(year, now.getMonth());
-    var header = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].join(" ");
-    var lines = [monthName + " " + year, "", header];
-    rows.forEach(function (row) {
-      lines.push(
-        row
-          .map(function (d) {
-            return d === null ? "  " : String(d).padStart(2, " ");
-          })
-          .join(" ")
-      );
-    });
-    applyTemplate(lines.join("\n"));
-  }
-
-  // Public content.json format: keys are page numbers "1".."8" (see
-  // PAGE_TO_CELL), not grid coordinates. Integer-like string keys are
-  // enumerated in ascending numeric order by JS, so JSON.stringify emits
-  // them as 1..8 regardless of insertion order.
-  function exportJson() {
-    var data = {};
-    CELL_ORDER.forEach(function (name) {
-      data[String(PAGE_NUMBERS[name])] = cellEl(name).value;
-    });
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "content.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
   // Mirrors Import MD's heading convention ("## 1") so a round trip through
   // Export MD -> Import MD reproduces the same content.
   function exportMd() {
@@ -352,32 +248,6 @@
       callback(text);
     };
     reader.readAsArrayBuffer(file);
-  }
-
-  function importJsonFile(file) {
-    readFileAsText(file, function (text) {
-      var data;
-      try {
-        data = JSON.parse(text);
-      } catch (err) {
-        alert("Not a valid JSON file: " + err.message);
-        return;
-      }
-      if (typeof data !== "object" || data === null || Array.isArray(data)) {
-        alert("content.json must contain a JSON object mapping page numbers (1-8) to text");
-        return;
-      }
-      Object.keys(data).forEach(function (key) {
-        var name = PAGE_TO_CELL[key];
-        if (!name) {
-          console.warn('Ignoring unknown page "' + key + '" in imported JSON');
-          return;
-        }
-        cellEl(name).value = data[key] == null ? "" : String(data[key]);
-      });
-      renderAllCells();
-      refreshStaging();
-    });
   }
 
   // A .md file is split into pages by headings that name a page number, e.g.:
@@ -423,8 +293,8 @@
         );
         return;
       }
-      // Pages without a matching heading in the file are blanked, same as
-      // the calendar templates: the .md file defines the whole booklet.
+      // Pages without a matching heading in the file are blanked — the .md
+      // file defines the whole booklet.
       CELL_ORDER.forEach(function (name) {
         cellEl(name).value = sections[String(PAGE_NUMBERS[name])] || "";
       });
@@ -435,10 +305,7 @@
 
   function init() {
     document.getElementById("btn-demo").addEventListener("click", loadDemo);
-    document.getElementById("btn-template-week").addEventListener("click", loadWeekTemplate);
-    document.getElementById("btn-template-month").addEventListener("click", loadMonthTemplate);
     document.getElementById("btn-clear").addEventListener("click", clearAll);
-    document.getElementById("btn-export").addEventListener("click", exportJson);
     document.getElementById("btn-export-md").addEventListener("click", exportMd);
     document.getElementById("btn-print").addEventListener("click", function () {
       renderAllCells();
@@ -472,17 +339,6 @@
       },
       true
     );
-
-    var fileInput = document.getElementById("file-import");
-    document.getElementById("btn-import").addEventListener("click", function () {
-      fileInput.click();
-    });
-    fileInput.addEventListener("change", function () {
-      if (fileInput.files && fileInput.files[0]) {
-        importJsonFile(fileInput.files[0]);
-      }
-      fileInput.value = "";
-    });
 
     var mdInput = document.getElementById("file-import-md");
     document.getElementById("btn-import-md").addEventListener("click", function () {
