@@ -6,6 +6,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from . import markdown_lite
 from .schema import CELL_NAMES, PAGE_NUMBERS
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -27,11 +28,13 @@ def build_cells(content: dict[str, str]) -> list[dict[str, str]]:
     cells = []
     for name in CELL_NAMES:
         col = 1 if name.endswith("1") else 2
+        text = content.get(name, "")
         cells.append({
             "name": name,
             "page": PAGE_NUMBERS[name],
             "col": col,
-            "text": content.get(name, ""),
+            "text": text,
+            "html": markdown_lite.render(text),
         })
     return cells
 

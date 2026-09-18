@@ -69,7 +69,8 @@ body {
   font-weight: bold;
   font-size: 3.2mm;
   color: #666;
-  padding: 2mm 2mm 0 2mm;
+  text-align: center;
+  padding: 0 2mm 2mm 2mm;
 }
 
 .cell-content {
@@ -88,4 +89,51 @@ body {
   background: transparent;
   color: inherit;
   width: 100%;
+}
+
+/* Block elements produced by the markdown-lite renderer (bold/italic/lists). */
+.cell-content p {
+  margin: 0 0 2mm 0;
+}
+
+.cell-content ul,
+.cell-content ol {
+  margin: 0 0 2mm 0;
+  padding-left: 4mm;
+}
+
+.cell-content li {
+  margin: 0;
+}
+
+.cell-content p:last-child,
+.cell-content ul:last-child,
+.cell-content ol:last-child {
+  margin-bottom: 0;
+}
+
+/* A "---" divider splits a cell into a CSS grid of equal-height, bordered
+   rows — the exact same technique used to divide the sheet into its 8
+   pages (.sheet is display:grid with grid-auto-rows/grid-template-rows;
+   .cell gets a dashed border). Used by the Week template (one row per
+   day), but works in any cell. */
+.cell-content .row-grid {
+  display: grid;
+  grid-auto-rows: 1fr;
+  width: 100%;
+  height: 100%;
+}
+
+.cell-content .row-cell {
+  border: 0.2mm dashed #999;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cell-content .row-cell p,
+.cell-content .row-cell ul,
+.cell-content .row-cell ol {
+  margin: 0;
 }

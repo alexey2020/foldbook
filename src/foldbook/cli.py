@@ -8,17 +8,34 @@ import sys
 from pathlib import Path
 
 from .render import REPO_ROOT, render_html
-from .schema import CELL_NAMES, ContentValidationError, validate_content
+from .schema import ContentValidationError, PAGE_TO_CELL, validate_content
 
 DEMO_CONTENT_PATH = REPO_ROOT / "examples" / "demo-content.json"
 
 
+def _read_text_smart(raw_bytes: bytes) -> str:
+    """Decode file bytes as UTF-8, falling back to Windows-1252 ("ANSI").
+
+    Files saved by older Windows editors (pre-2019 Notepad, many CSV/text
+    exports) often use the system's legacy codepage rather than UTF-8;
+    decoding those as UTF-8 would raise UnicodeDecodeError on the first
+    accented Latin letter (é, ë, etc.). Windows-1252 assigns every byte a
+    character, so this fallback never fails.
+    """
+    try:
+        return raw_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw_bytes.decode("cp1252")
+
+
 def _load_content_file(path: Path) -> dict[str, str]:
     try:
-        raw = path.read_text(encoding="utf-8")
+        raw_bytes = path.read_bytes()
     except FileNotFoundError:
         print(f"Error: file not found: {path}", file=sys.stderr)
         raise SystemExit(1)
+
+    raw = _read_text_smart(raw_bytes)
 
     try:
         data = json.loads(raw)
@@ -57,7 +74,7 @@ def cmd_init(args: argparse.Namespace) -> None:
         print(f"Error: {output_path} already exists (use --force to overwrite)", file=sys.stderr)
         raise SystemExit(1)
 
-    blank = {name: "" for name in CELL_NAMES}
+    blank = {page: "" for page in sorted(PAGE_TO_CELL, key=int)}
     output_path.write_text(json.dumps(blank, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {output_path}")
 

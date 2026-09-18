@@ -22,9 +22,66 @@ body {
   cursor: pointer;
 }
 
+.hint {
+  align-self: flex-start;
+  margin-top: -4mm;
+  font-size: 12px;
+  color: #666;
+}
+
 .sheet {
   background: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.staging {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 210mm;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.staging textarea {
+  flex: 1 1 auto;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px;
+  resize: vertical;
+}
+
+.staging select,
+.staging button {
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+/* By default every cell shows its rendered view (bold/italic/lists/dividers
+   as real formatting, not raw markdown). Clicking into a cell switches that
+   one cell to a plain-text textarea for editing; clicking away renders it
+   again. This keeps the raw markdown source as the single source of truth
+   (still what's stored/exported) while showing the print-accurate result
+   whenever you're not actively typing in a given cell. */
+textarea.cell-content {
+  display: none;
+}
+
+.cell-print {
+  display: block;
+  cursor: text;
+}
+
+.cell-inner.editing textarea.cell-content {
+  display: block;
+}
+
+.cell-inner.editing .cell-print {
+  display: none;
 }
 
 @media print {
@@ -41,5 +98,14 @@ body {
 
   .sheet {
     box-shadow: none;
+  }
+
+  /* Printing always shows the rendered view, even for a cell mid-edit. */
+  textarea.cell-content {
+    display: none !important;
+  }
+
+  .cell-print {
+    display: block !important;
   }
 }

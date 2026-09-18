@@ -12,8 +12,8 @@
 {% for cell in cells %}
   <div class="cell col-{{ cell.col }}">
     <div class="cell-inner">
+      <div class="cell-content">{{ cell.html | safe }}</div>
       <div class="cell-label">{{ cell.page }}</div>
-      <div class="cell-content">{{ cell.text }}</div>
     </div>
   </div>
 {% endfor %}

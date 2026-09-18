@@ -10,45 +10,76 @@
   <div class="toolbar no-print">
     <strong>Foldbook</strong>
     <button id="btn-demo" type="button">Load Demo</button>
+    <button id="btn-template-week" type="button">Week</button>
+    <button id="btn-template-month" type="button">Month</button>
     <button id="btn-clear" type="button">Clear All</button>
     <button id="btn-import" type="button">Import JSON</button>
+    <button id="btn-import-md" type="button">Import MD</button>
     <button id="btn-export" type="button">Export JSON</button>
+    <button id="btn-export-md" type="button">Export MD</button>
     <button id="btn-print" type="button">Print / Save PDF</button>
     <input id="file-import" type="file" accept="application/json" hidden>
+    <input id="file-import-md" type="file" accept=".md,text/markdown" hidden>
+  </div>
+
+  <div class="hint no-print">A page fits about 27 lines of text.</div>
+
+  <div class="staging no-print">
+    <label for="staging-cell">Page:</label>
+    <select id="staging-cell">
+      <option value="B1">Page 1</option>
+      <option value="C1">Page 2</option>
+      <option value="D1">Page 3</option>
+      <option value="D2">Page 4</option>
+      <option value="C2">Page 5</option>
+      <option value="B2">Page 6</option>
+      <option value="A2">Page 7</option>
+      <option value="A1">Page 8</option>
+    </select>
+    <textarea id="staging-text" rows="4" placeholder="Comfortable text input without rotation — pick a page and click Insert"></textarea>
+    <button id="btn-staging-apply" type="button">Insert into page</button>
   </div>
 
   <div class="sheet">
     <div class="cell col-1"><div class="cell-inner">
-      <div class="cell-label">8</div>
       <textarea class="cell-content" id="cell-A1"></textarea>
+      <div class="cell-content cell-print" id="print-A1"></div>
+      <div class="cell-label">8</div>
     </div></div>
     <div class="cell col-2"><div class="cell-inner">
-      <div class="cell-label">7</div>
       <textarea class="cell-content" id="cell-A2"></textarea>
+      <div class="cell-content cell-print" id="print-A2"></div>
+      <div class="cell-label">7</div>
     </div></div>
     <div class="cell col-1"><div class="cell-inner">
-      <div class="cell-label">1</div>
       <textarea class="cell-content" id="cell-B1"></textarea>
+      <div class="cell-content cell-print" id="print-B1"></div>
+      <div class="cell-label">1</div>
     </div></div>
     <div class="cell col-2"><div class="cell-inner">
-      <div class="cell-label">6</div>
       <textarea class="cell-content" id="cell-B2"></textarea>
+      <div class="cell-content cell-print" id="print-B2"></div>
+      <div class="cell-label">6</div>
     </div></div>
     <div class="cell col-1"><div class="cell-inner">
-      <div class="cell-label">2</div>
       <textarea class="cell-content" id="cell-C1"></textarea>
+      <div class="cell-content cell-print" id="print-C1"></div>
+      <div class="cell-label">2</div>
     </div></div>
     <div class="cell col-2"><div class="cell-inner">
-      <div class="cell-label">5</div>
       <textarea class="cell-content" id="cell-C2"></textarea>
+      <div class="cell-content cell-print" id="print-C2"></div>
+      <div class="cell-label">5</div>
     </div></div>
     <div class="cell col-1"><div class="cell-inner">
-      <div class="cell-label">3</div>
       <textarea class="cell-content" id="cell-D1"></textarea>
+      <div class="cell-content cell-print" id="print-D1"></div>
+      <div class="cell-label">3</div>
     </div></div>
     <div class="cell col-2"><div class="cell-inner">
-      <div class="cell-label">4</div>
       <textarea class="cell-content" id="cell-D2"></textarea>
+      <div class="cell-content cell-print" id="print-D2"></div>
+      <div class="cell-label">4</div>
     </div></div>
   </div>
 
