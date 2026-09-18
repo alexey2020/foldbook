@@ -1,43 +1,71 @@
 (function () {
   "use strict";
 
+  var SIDES = ["front", "back"];
   var CELL_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2", "D1", "D2"];
 
-  // Reading-order page number for each cell — also the public .md heading
-  // key (see PAGE_TO_CELL): Import/Export MD address pages by number
-  // ("1".."8"), never by internal grid coordinate.
-  var PAGE_NUMBERS = { A1: 8, A2: 7, B1: 1, B2: 6, C1: 2, C2: 5, D1: 3, D2: 4 };
-  var PAGE_TO_CELL = {};
-  CELL_ORDER.forEach(function (name) {
-    PAGE_TO_CELL[String(PAGE_NUMBERS[name])] = name;
-  });
-
-  var DEMO_CONTENT = {
-    "1": "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.",
-    "2": "Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat.",
-    "3": "Vivamus vestibulum sagittis sapien. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Pellentesque erat lorem.",
-    "4": "Aliquam erat volutpat. Praesent ac massa at ligula laoreet iaculis. Vivamus a mi. Morbi neque. Aliquam erat volutpat. Nullam varius. Etiam dictum tincidunt diam. Vestibulum ante ipsum primis in faucibus orci luctus.",
-    "5": "Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae. Mauris viverra diam vitae quam. Suspendisse potenti. Nullam porttitor lacus at turpis. Donec posuere vulputate arcu.",
-    "6": "Quisque porta volutpat erat. Quisque erat eros, viverra eget, congue eget, semper rutrum, nulla. Nunc purus. Phasellus in felis. Donec semper sapien a libero. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus.",
-    "7": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    "8": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+  // Reading-order page number for each (side, cell) — also the public .md
+  // heading key (see PAGE_TO_SLOT): Import/Export MD address pages by
+  // number ("1".."16"), never by internal grid coordinate. The back side
+  // continues the same spiral pattern as the front, offset by 8; validated
+  // against a physical duplex test print (see README's "Double-sided
+  // printing" section).
+  var PAGE_NUMBERS = {
+    front: { A1: 8, A2: 7, B1: 1, B2: 6, C1: 2, C2: 5, D1: 3, D2: 4 },
+    back: { A1: 16, A2: 15, B1: 9, B2: 14, C1: 10, C2: 13, D1: 11, D2: 12 },
   };
 
-  function cellEl(name) {
-    return document.getElementById("cell-" + name);
+  // All 16 (side, cell) slots, front first, each side in CELL_ORDER.
+  var SLOTS = [];
+  SIDES.forEach(function (side) {
+    CELL_ORDER.forEach(function (name) {
+      SLOTS.push({ side: side, name: name });
+    });
+  });
+
+  // "1".."16" -> {side, name}
+  var PAGE_TO_SLOT = {};
+  SLOTS.forEach(function (slot) {
+    PAGE_TO_SLOT[String(PAGE_NUMBERS[slot.side][slot.name])] = slot;
+  });
+
+  // A little pocket almanac — 16 original short poems, one per page,
+  // demonstrating markdown formatting (bold title) instead of filler text.
+  var DEMO_CONTENT = {
+    "1": "**Folding**\nA flat white field,\nfour creases, then a fifth —\nsuddenly a house\nsmall enough to keep.",
+    "2": "**Pockets**\nWhat we carry close\nweighs less than what we carry\nin the open hand.",
+    "3": "**Morning Light**\nThe kettle sings\nbefore the window does;\nsteam climbs the glass\nslower than the sun.",
+    "4": "**Rain**\nEvery drop forgets\nthe cloud it came from\nthe moment it lands\nand calls the ground home.",
+    "5": "**A Walk**\nGravel, then grass,\nthen nothing marked at all —\nthe best paths\nrarely know their names.",
+    "6": "**Old Letters**\nInk fades to brown,\nbut folds keep their shape —\nsome creases\noutlive the hand that made them.",
+    "7": "**Winter Window**\nFrost draws maps\nof countries no one visits,\nborders melting\nby noon.",
+    "8": "**Tea**\nTwo minutes steeping\nis a small kind of patience\nthe whole day\ncould learn from.",
+    "9": "**City Night**\nA thousand windows,\neach one a different hour —\nsomeone, somewhere,\nis just waking up.",
+    "10": "**A Garden**\nWeeds don't know\nthey weren't invited;\nthey grow anyway,\nstubborn and green.",
+    "11": "**First Snow**\nThe world holds still\nfor exactly one hour\nbefore the first boot\nwrites its sentence.",
+    "12": "**The Sea**\nIt keeps no calendar,\nonly the moon's short memory,\nin and out,\nnever quite finished.",
+    "13": "**An Old Clock**\nIt still keeps time,\njust not this century's —\nten minutes slow\nfeels almost honest.",
+    "14": "**Autumn Leaves**\nEach one lets go\nat a slightly different angle —\nno two goodbyes\nfall the same way.",
+    "15": "**A Quiet Room**\nDust turns in the light\nlike something thinking it over,\nno hurry\nto land anywhere.",
+    "16": "**Closing the Book**\nFold it shut,\nslip it in your pocket —\nsixteen small rooms,\ncarried like one."
+  };
+
+  function cellEl(side, name) {
+    return document.getElementById("cell-" + side + "-" + name);
   }
 
   function loadDemo() {
-    CELL_ORDER.forEach(function (name) {
-      cellEl(name).value = DEMO_CONTENT[String(PAGE_NUMBERS[name])] || "";
+    SLOTS.forEach(function (slot) {
+      var page = String(PAGE_NUMBERS[slot.side][slot.name]);
+      cellEl(slot.side, slot.name).value = DEMO_CONTENT[page] || "";
     });
     renderAllCells();
     refreshStaging();
   }
 
   function clearAll() {
-    CELL_ORDER.forEach(function (name) {
-      cellEl(name).value = "";
+    SLOTS.forEach(function (slot) {
+      cellEl(slot.side, slot.name).value = "";
     });
     renderAllCells();
     refreshStaging();
@@ -147,44 +175,50 @@
     return hasDivider ? renderRowGrid(text) : renderBlocks(text);
   }
 
-  function renderCell(name) {
-    document.getElementById("print-" + name).innerHTML = renderMarkdownLite(cellEl(name).value);
+  function printEl(side, name) {
+    return document.getElementById("print-" + side + "-" + name);
+  }
+
+  function renderCell(side, name) {
+    printEl(side, name).innerHTML = renderMarkdownLite(cellEl(side, name).value);
   }
 
   function renderAllCells() {
-    CELL_ORDER.forEach(renderCell);
+    SLOTS.forEach(function (slot) {
+      renderCell(slot.side, slot.name);
+    });
   }
 
   // --- Edit/render toggle: a cell shows its rendered view by default; the
   // raw-markdown textarea appears only for the one cell currently being
-  // edited. `currentEditingCell` plus a capture-phase document click
+  // edited. `currentEditingSlot` plus a capture-phase document click
   // listener (below) are the primary mechanism, not focus/blur: the
   // rendered view is a plain non-focusable div, and blur is unreliable in
   // some embedding contexts. focus/blur are still wired up too, so
   // keyboard-driven focus changes (Tab) behave correctly in a normal
   // browser tab.
 
-  var currentEditingCell = null;
+  var currentEditingSlot = null;
 
-  function enterEditMode(name) {
-    currentEditingCell = name;
-    cellEl(name).closest(".cell-inner").classList.add("editing");
+  function enterEditMode(side, name) {
+    currentEditingSlot = { side: side, name: name };
+    cellEl(side, name).closest(".cell-inner").classList.add("editing");
   }
 
-  function exitEditMode(name) {
-    if (currentEditingCell === name) {
-      currentEditingCell = null;
+  function exitEditMode(side, name) {
+    if (currentEditingSlot && currentEditingSlot.side === side && currentEditingSlot.name === name) {
+      currentEditingSlot = null;
     }
-    renderCell(name);
-    cellEl(name).closest(".cell-inner").classList.remove("editing");
+    renderCell(side, name);
+    cellEl(side, name).closest(".cell-inner").classList.remove("editing");
   }
 
   // The rendered view is a plain, non-focusable div, so a click on it can't
   // trigger the textarea's own focus event the way a click on the textarea
   // itself would. Show the textarea first, then focus it explicitly.
-  function focusCellForEditing(name) {
-    enterEditMode(name);
-    cellEl(name).focus();
+  function focusCellForEditing(side, name) {
+    enterEditMode(side, name);
+    cellEl(side, name).focus();
   }
 
   // --- Staging area: a normal, unrotated textarea for comfortable typing ---
@@ -197,23 +231,33 @@
     return document.getElementById("staging-text");
   }
 
+  // The <select> value is "side:name", e.g. "front:A1" or "back:B1".
+  function stagingSlot() {
+    var parts = stagingCellEl().value.split(":");
+    return { side: parts[0], name: parts[1] };
+  }
+
   function refreshStaging() {
-    stagingTextEl().value = cellEl(stagingCellEl().value).value;
+    var slot = stagingSlot();
+    stagingTextEl().value = cellEl(slot.side, slot.name).value;
   }
 
   function applyStagingToCell() {
-    var name = stagingCellEl().value;
-    cellEl(name).value = stagingTextEl().value;
-    renderCell(name);
+    var slot = stagingSlot();
+    cellEl(slot.side, slot.name).value = stagingTextEl().value;
+    renderCell(slot.side, slot.name);
   }
 
   // Mirrors Import MD's heading convention ("## 1") so a round trip through
   // Export MD -> Import MD reproduces the same content.
   function exportMd() {
+    var pages = [];
+    for (var n = 1; n <= 16; n++) pages.push(String(n));
     var text =
-      ["1", "2", "3", "4", "5", "6", "7", "8"]
+      pages
         .map(function (page) {
-          return "## " + page + "\n\n" + cellEl(PAGE_TO_CELL[page]).value;
+          var slot = PAGE_TO_SLOT[page];
+          return "## " + page + "\n\n" + cellEl(slot.side, slot.name).value;
         })
         .join("\n\n") + "\n";
     var blob = new Blob([text], { type: "text/markdown" });
@@ -261,7 +305,7 @@
     var result = {};
     var currentPage = null;
     var buffer = [];
-    var headingRe = /^#{1,6}\s+([1-8])\s*$/;
+    var headingRe = /^#{1,6}\s+(1[0-6]|[1-9])\s*$/;
 
     function flush() {
       if (currentPage) {
@@ -295,8 +339,9 @@
       }
       // Pages without a matching heading in the file are blanked — the .md
       // file defines the whole booklet.
-      CELL_ORDER.forEach(function (name) {
-        cellEl(name).value = sections[String(PAGE_NUMBERS[name])] || "";
+      SLOTS.forEach(function (slot) {
+        var page = String(PAGE_NUMBERS[slot.side][slot.name]);
+        cellEl(slot.side, slot.name).value = sections[page] || "";
       });
       renderAllCells();
       refreshStaging();
@@ -313,15 +358,26 @@
     });
     window.addEventListener("beforeprint", renderAllCells);
 
-    CELL_ORDER.forEach(function (name) {
-      cellEl(name).addEventListener("focus", function () {
-        enterEditMode(name);
+    var showPageNumbers = document.getElementById("show-page-numbers");
+    function syncPageNumberVisibility() {
+      document.body.classList.toggle("hide-page-numbers", !showPageNumbers.checked);
+    }
+    showPageNumbers.addEventListener("change", syncPageNumberVisibility);
+    // Sync on load too: browsers sometimes restore a checkbox's checked
+    // state from before a reload, overriding the HTML's `checked`
+    // attribute, so the display could otherwise start out of sync with
+    // whatever the checkbox actually shows.
+    syncPageNumberVisibility();
+
+    SLOTS.forEach(function (slot) {
+      cellEl(slot.side, slot.name).addEventListener("focus", function () {
+        enterEditMode(slot.side, slot.name);
       });
-      cellEl(name).addEventListener("blur", function () {
-        exitEditMode(name);
+      cellEl(slot.side, slot.name).addEventListener("blur", function () {
+        exitEditMode(slot.side, slot.name);
       });
-      document.getElementById("print-" + name).addEventListener("click", function () {
-        focusCellForEditing(name);
+      printEl(slot.side, slot.name).addEventListener("click", function () {
+        focusCellForEditing(slot.side, slot.name);
       });
     });
 
@@ -331,10 +387,10 @@
     document.addEventListener(
       "click",
       function (e) {
-        if (!currentEditingCell) return;
-        var wrapper = cellEl(currentEditingCell).closest(".cell-inner");
+        if (!currentEditingSlot) return;
+        var wrapper = cellEl(currentEditingSlot.side, currentEditingSlot.name).closest(".cell-inner");
         if (!wrapper.contains(e.target)) {
-          exitEditMode(currentEditingCell);
+          exitEditMode(currentEditingSlot.side, currentEditingSlot.name);
         }
       },
       true

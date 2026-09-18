@@ -1,13 +1,20 @@
 /*
- * Shared print layout for foldbook.
- * Used both by the CLI-generated static HTML (inlined) and by web/index.html
- * (linked directly). Keep this file the single source of truth for the
- * 2x4 A4 grid and the per-column text rotation.
+ * Shared print layout for foldbook (web/index.html). Single source of truth
+ * for the 2x4 A4 grid and the per-column text rotation.
  */
 
 @page {
   size: A4 portrait;
   margin: 0;
+}
+
+/* Two-sided printing: the front sheet (pages 1-8) and back sheet (pages
+   9-16) must land on separate physical print pages so a duplex printer puts
+   them on opposite sides of the same sheet of paper. */
+@media print {
+  .sheet-group.back {
+    break-before: page;
+  }
 }
 
 *,

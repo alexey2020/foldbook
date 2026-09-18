@@ -14,68 +14,127 @@
     <button id="btn-import-md" type="button">Import MD</button>
     <button id="btn-export-md" type="button">Export MD</button>
     <button id="btn-print" type="button">Print / Save PDF</button>
+    <label class="checkbox-label">
+      <input id="show-page-numbers" type="checkbox" checked>
+      Show page numbers
+    </label>
     <input id="file-import-md" type="file" accept=".md,text/markdown" hidden>
   </div>
-
-  <div class="hint no-print">A page fits about 27 lines of text.</div>
 
   <div class="staging no-print">
     <label for="staging-cell">Page:</label>
     <select id="staging-cell">
-      <option value="B1">Page 1</option>
-      <option value="C1">Page 2</option>
-      <option value="D1">Page 3</option>
-      <option value="D2">Page 4</option>
-      <option value="C2">Page 5</option>
-      <option value="B2">Page 6</option>
-      <option value="A2">Page 7</option>
-      <option value="A1">Page 8</option>
+      <option value="front:B1">Page 1</option>
+      <option value="front:C1">Page 2</option>
+      <option value="front:D1">Page 3</option>
+      <option value="front:D2">Page 4</option>
+      <option value="front:C2">Page 5</option>
+      <option value="front:B2">Page 6</option>
+      <option value="front:A2">Page 7</option>
+      <option value="front:A1">Page 8</option>
+      <option value="back:B1">Page 9 (back)</option>
+      <option value="back:C1">Page 10 (back)</option>
+      <option value="back:D1">Page 11 (back)</option>
+      <option value="back:D2">Page 12 (back)</option>
+      <option value="back:C2">Page 13 (back)</option>
+      <option value="back:B2">Page 14 (back)</option>
+      <option value="back:A2">Page 15 (back)</option>
+      <option value="back:A1">Page 16 (back)</option>
     </select>
     <textarea id="staging-text" rows="4" placeholder="Comfortable text input without rotation — pick a page and click Insert"></textarea>
     <button id="btn-staging-apply" type="button">Insert into page</button>
   </div>
 
-  <div class="sheet">
-    <div class="cell col-1"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-A1"></textarea>
-      <div class="cell-content cell-print" id="print-A1"></div>
-      <div class="cell-label">8</div>
-    </div></div>
-    <div class="cell col-2"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-A2"></textarea>
-      <div class="cell-content cell-print" id="print-A2"></div>
-      <div class="cell-label">7</div>
-    </div></div>
-    <div class="cell col-1"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-B1"></textarea>
-      <div class="cell-content cell-print" id="print-B1"></div>
-      <div class="cell-label">1</div>
-    </div></div>
-    <div class="cell col-2"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-B2"></textarea>
-      <div class="cell-content cell-print" id="print-B2"></div>
-      <div class="cell-label">6</div>
-    </div></div>
-    <div class="cell col-1"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-C1"></textarea>
-      <div class="cell-content cell-print" id="print-C1"></div>
-      <div class="cell-label">2</div>
-    </div></div>
-    <div class="cell col-2"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-C2"></textarea>
-      <div class="cell-content cell-print" id="print-C2"></div>
-      <div class="cell-label">5</div>
-    </div></div>
-    <div class="cell col-1"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-D1"></textarea>
-      <div class="cell-content cell-print" id="print-D1"></div>
-      <div class="cell-label">3</div>
-    </div></div>
-    <div class="cell col-2"><div class="cell-inner">
-      <textarea class="cell-content" id="cell-D2"></textarea>
-      <div class="cell-content cell-print" id="print-D2"></div>
-      <div class="cell-label">4</div>
-    </div></div>
+  <div class="sheet-group front">
+    <div class="sheet-label no-print">Front &middot; pages 1&ndash;8</div>
+    <div class="sheet">
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-A1"></textarea>
+        <div class="cell-content cell-print" id="print-front-A1"></div>
+        <div class="cell-label">8</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-A2"></textarea>
+        <div class="cell-content cell-print" id="print-front-A2"></div>
+        <div class="cell-label">7</div>
+      </div></div>
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-B1"></textarea>
+        <div class="cell-content cell-print" id="print-front-B1"></div>
+        <div class="cell-label">1</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-B2"></textarea>
+        <div class="cell-content cell-print" id="print-front-B2"></div>
+        <div class="cell-label">6</div>
+      </div></div>
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-C1"></textarea>
+        <div class="cell-content cell-print" id="print-front-C1"></div>
+        <div class="cell-label">2</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-C2"></textarea>
+        <div class="cell-content cell-print" id="print-front-C2"></div>
+        <div class="cell-label">5</div>
+      </div></div>
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-D1"></textarea>
+        <div class="cell-content cell-print" id="print-front-D1"></div>
+        <div class="cell-label">3</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-front-D2"></textarea>
+        <div class="cell-content cell-print" id="print-front-D2"></div>
+        <div class="cell-label">4</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="sheet-group back">
+    <div class="sheet-label no-print">Back &middot; pages 9&ndash;16 (for double-sided printing)</div>
+    <div class="sheet">
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-A1"></textarea>
+        <div class="cell-content cell-print" id="print-back-A1"></div>
+        <div class="cell-label">16</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-A2"></textarea>
+        <div class="cell-content cell-print" id="print-back-A2"></div>
+        <div class="cell-label">15</div>
+      </div></div>
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-B1"></textarea>
+        <div class="cell-content cell-print" id="print-back-B1"></div>
+        <div class="cell-label">9</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-B2"></textarea>
+        <div class="cell-content cell-print" id="print-back-B2"></div>
+        <div class="cell-label">14</div>
+      </div></div>
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-C1"></textarea>
+        <div class="cell-content cell-print" id="print-back-C1"></div>
+        <div class="cell-label">10</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-C2"></textarea>
+        <div class="cell-content cell-print" id="print-back-C2"></div>
+        <div class="cell-label">13</div>
+      </div></div>
+      <div class="cell col-1"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-D1"></textarea>
+        <div class="cell-content cell-print" id="print-back-D1"></div>
+        <div class="cell-label">11</div>
+      </div></div>
+      <div class="cell col-2"><div class="cell-inner">
+        <textarea class="cell-content" id="cell-back-D2"></textarea>
+        <div class="cell-content cell-print" id="print-back-D2"></div>
+        <div class="cell-label">12</div>
+      </div></div>
+    </div>
   </div>
 
 <script src="app.js"></script>

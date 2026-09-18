@@ -1,12 +1,13 @@
 # Foldbook
 
-Turn a single A4 sheet into a printable 8-panel foldable booklet — like
-pocketmod.com, but with no login. A pure static web page: open `web/index.html`
-in a browser, no server, no build step, no install, no account.
+Turn a single A4 sheet into a printable 8-panel foldable booklet (16 with
+double-sided printing) — like pocketmod.com, but with no login. A pure
+static web page: open `web/index.html` in a browser, no server, no build
+step, no install, no account.
 
-Print on one side of an A4 sheet only. The page is a 2-column × 4-row grid,
-addressed internally by grid coordinate (A1..D2) but printed with the
-booklet's reading-order page number:
+The A4 sheet is a 2-column × 4-row grid, addressed internally by grid
+coordinate (A1..D2) but printed with the booklet's reading-order page
+number:
 
 ```
 A1 A2        8 7
@@ -19,10 +20,14 @@ Reading order runs down the left column (1, 2, 3), across, then back up the
 right column (4, 5, 6, 7), ending on the front/back cover (8 = A1, 7 = A2).
 The grid coordinate is purely internal (which physical cell, which rotation)
 — .md import/export and the web editor's Page dropdown all address pages by
-this reading-order number (1-8), never by coordinate.
+this reading-order number, never by coordinate.
 
 Text in the left column (A1, B1, C1, D1) is rotated 90°. Text in the right
 column (A2, B2, C2, D2) is rotated 270°.
+
+The editor shows two sheets, front (pages 1-8) and back (pages 9-16) — see
+"Double-sided printing" below for how to actually get content onto both
+sides of one physical sheet, and how the two sides line up once folded.
 
 ## Usage
 
@@ -36,8 +41,10 @@ build step, no network access.
 - The unrotated **staging box** below the toolbar is a comfortable place to
   type: pick a page from the **Page** dropdown (it loads that page's current
   text), edit normally, then click **Insert into page** to push it back in.
-- **Export MD** downloads all 8 pages as a single `content.md`, one `## 1`
-  / `## 2` / ... / `## 8` section per page (in reading order).
+- **Show page numbers** toggles the small printed page number on every page.
+  Unchecked, it's hidden and that space is freed up for content instead.
+- **Export MD** downloads all 16 pages as a single `content.md`, one `## 1`
+  through `## 16` section per page (in reading order).
 - **Import MD** loads a `.md` file split into pages by headings that name a
   page number, e.g. `## 1`. Pages without a matching heading are blanked.
   See "Markdown formatting" below for what's supported inside each section.
@@ -70,6 +77,36 @@ Ctrl+P (or the Print button), then:
 - Uncheck "Headers and footers"
 - Check "Background graphics" (so the dashed fold/cut guides print)
 
+Printing always produces 2 pages: the front sheet (1-8), then the back
+sheet (9-16) on its own page, so a duplex printer puts them on opposite
+sides of one physical A4 sheet. If you only want the front, print just
+page 1 of the print dialog's page range.
+
+## Double-sided printing
+
+To use pages 9-16: print duplex, then unfold the sheet flat, flip it over
+(left-to-right, like turning a book page), and fold it again the same way.
+
+Both of your printer's duplex modes work — pick whichever it defaults to.
+Physically verified by test print (front page N ends up back-to-back with
+back page):
+
+| Front page | Flip on Long Edge | Flip on Short Edge |
+|---|---|---|
+| 1 | 14 | 10 |
+| 2 | 13 | 9  |
+| 3 | 12 | 16 |
+| 4 | 11 | 15 |
+| 5 | 10 | 14 |
+| 6 | 9  | 13 |
+| 7 | 16 | 12 |
+| 8 | 15 | 11 |
+
+In practice it doesn't matter much which mode you pick: refolding the sheet
+from the back reverses every crease's fold direction anyway, so neither
+mode gives a "more correct" result than the other — both just land the
+back's 8 pages in a different pairing with the front's 8.
+
 ## Content .md format
 
 ```md
@@ -80,9 +117,9 @@ text for page 1
 text for page 2
 ```
 
-- Headings are reading-order page numbers ("1".."8"), not grid coordinates
-  — see the table near the top of this file for which page prints where.
-- All 8 headings are optional; a missing one renders as a blank page (the
+- Headings are reading-order page numbers ("1".."16"), not grid coordinates
+  — see the tables above for which page prints where, front and back.
+- All 16 headings are optional; a missing one renders as a blank page (the
   printed page number still shows).
 - Unrecognized headings are ignored with a console warning.
 
