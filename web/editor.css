@@ -1,0 +1,45 @@
+/* Editor-only chrome. Never shared with the CLI's static export. */
+
+body {
+  background: #e5e5e5;
+  margin: 0;
+  padding: 12mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8mm;
+  font-family: sans-serif;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar button {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.sheet {
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+@media print {
+  body {
+    background: #fff;
+    margin: 0;
+    padding: 0;
+    display: block;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .sheet {
+    box-shadow: none;
+  }
+}

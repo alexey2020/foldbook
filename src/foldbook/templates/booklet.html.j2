@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ title }}</title>
+<style>
+{{ css }}
+</style>
+</head>
+<body>
+<div class="sheet">
+{% for cell in cells %}
+  <div class="cell col-{{ cell.col }}">
+    <div class="cell-inner">
+      <div class="cell-label">{{ cell.page }}</div>
+      <div class="cell-content">{{ cell.text }}</div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+</body>
+</html>

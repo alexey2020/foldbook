@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Foldbook Editor</title>
+<link rel="stylesheet" href="../layout.css">
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <div class="toolbar no-print">
+    <strong>Foldbook</strong>
+    <button id="btn-demo" type="button">Load Demo</button>
+    <button id="btn-clear" type="button">Clear All</button>
+    <button id="btn-import" type="button">Import JSON</button>
+    <button id="btn-export" type="button">Export JSON</button>
+    <button id="btn-print" type="button">Print / Save PDF</button>
+    <input id="file-import" type="file" accept="application/json" hidden>
+  </div>
+
+  <div class="sheet">
+    <div class="cell col-1"><div class="cell-inner">
+      <div class="cell-label">8</div>
+      <textarea class="cell-content" id="cell-A1"></textarea>
+    </div></div>
+    <div class="cell col-2"><div class="cell-inner">
+      <div class="cell-label">7</div>
+      <textarea class="cell-content" id="cell-A2"></textarea>
+    </div></div>
+    <div class="cell col-1"><div class="cell-inner">
+      <div class="cell-label">1</div>
+      <textarea class="cell-content" id="cell-B1"></textarea>
+    </div></div>
+    <div class="cell col-2"><div class="cell-inner">
+      <div class="cell-label">6</div>
+      <textarea class="cell-content" id="cell-B2"></textarea>
+    </div></div>
+    <div class="cell col-1"><div class="cell-inner">
+      <div class="cell-label">2</div>
+      <textarea class="cell-content" id="cell-C1"></textarea>
+    </div></div>
+    <div class="cell col-2"><div class="cell-inner">
+      <div class="cell-label">5</div>
+      <textarea class="cell-content" id="cell-C2"></textarea>
+    </div></div>
+    <div class="cell col-1"><div class="cell-inner">
+      <div class="cell-label">3</div>
+      <textarea class="cell-content" id="cell-D1"></textarea>
+    </div></div>
+    <div class="cell col-2"><div class="cell-inner">
+      <div class="cell-label">4</div>
+      <textarea class="cell-content" id="cell-D2"></textarea>
+    </div></div>
+  </div>
+
+<script src="app.js"></script>
+</body>
+</html>
