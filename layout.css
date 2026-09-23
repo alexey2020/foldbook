@@ -48,6 +48,22 @@ body {
   border: 0.2mm dashed #999;
 }
 
+/* The sheet is folded along every grid line except one: a physical cut runs
+   along the middle of the vertical line between the two columns, but only
+   across the two middle rows (B, C) — i.e. between B1|B2 and C1|C2. DOM
+   order within .sheet is A1,A2,B1,B2,C1,C2,D1,D2, so those are children
+   3-6. Everywhere else (including the rest of that same vertical line, in
+   rows A and D) stays a dashed fold line. */
+.sheet .cell:nth-child(3),
+.sheet .cell:nth-child(5) {
+  border-right-style: solid;
+}
+
+.sheet .cell:nth-child(4),
+.sheet .cell:nth-child(6) {
+  border-left-style: solid;
+}
+
 .cell-inner {
   position: absolute;
   top: 50%;
