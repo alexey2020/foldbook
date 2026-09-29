@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="../layout.css">
+<style>
+  /* Screen-only chrome, same look as the editor. The printed geometry
+     (grid, rotation, fold/cut lines) comes entirely from layout.css. */
+  body {
+    background: #e5e5e5;
+    padding: 12mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8mm;
+    font-family: sans-serif;
+  }
+
+  .sheet {
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .sheet-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2mm;
+  }
+
+  .sheet-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #444;
+  }
+
+  .cell-inner {
+    padding: 3mm;
+  }
+
+  /* Every page is drawn in a 660x960 box, close to the 68.25 x 99 mm
+     area left inside the 3mm padding. */
+  .page {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  @media print {
+    body {
+      background: #fff;
+      padding: 0;
+      display: block;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .sheet {
+      box-shadow: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!--
+  Artwork. Each page is a <g id="..."> drawn in a 660x960 box, in normal
+  reading orientation; the cells below just <use> it and layout.css rotates
+  it into place. Spreads (pages 4|5 and 12|13) are drawn once in a 1320x960
+  box, and each of the two cells shows its half through its own viewBox.
+
+  Text inside <use> clones doesn't inherit from the page, so every page
+  group carries its own font attributes.
+
+  Comic A (front, pages 1-8):  a-1 a-2 a-3 a-45 a-6 a-7 a-8
+  Comic B (back, pages 9-16):  b-1 b-2 b-3 b-45 b-6 b-7 b-8
+-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<!-- ART GOES HERE -->
+</defs>
+</svg>
+
+<!-- Cell order and page numbers match web/index.html:
+     front A1..D2 = 8 7 1 6 2 5 3 4, back = the same + 8. -->
+<div class="sheet-group front">
+  <div class="sheet-label no-print">{{LABEL_A}}</div>
+  <div class="sheet">
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-8"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-7"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-1"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-6"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-2"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="660 0 660 960"><use href="#a-45"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-3"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-45"/></svg></div></div>
+  </div>
+</div>
+
+<div class="sheet-group back">
+  <div class="sheet-label no-print">{{LABEL_B}}</div>
+  <div class="sheet">
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-8"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-7"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-1"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-6"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-2"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="660 0 660 960"><use href="#b-45"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-3"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-45"/></svg></div></div>
+  </div>
+</div>
+
+</body>
+</html>
