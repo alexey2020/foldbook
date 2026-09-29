@@ -123,12 +123,25 @@ text for page 2
   printed page number still shows).
 - Unrecognized headings are ignored with a console warning.
 
+## Comics
+
+`comics/comics.html` is a ready-to-print pair of comics drawn in inline SVG,
+one per side of the sheet: No. 1 "Moon Fishing" on the front (pages 1-8),
+No. 2 "Bolt & the Sprout" on the back (9-16). Open it in a browser and
+print it with the same settings as above.
+
+Each comic has a front cover (1 / 9), a back cover (8 / 16), and one wide
+panel across the 4|5 (12|13) spread. The spread is drawn once and each of
+its two cells shows its half through its own `viewBox`, so the picture
+lines up across the fold.
+
 ## Project structure
 
 ```
 layout.css     Shared print layout (grid + rotation) — the single source of
                truth for both the on-screen editor and the printed result.
 web/           Static, no-build web editor (index.html, app.js, editor.css).
+comics/        Printable SVG comics built on the same layout.css.
 ```
 
 ## Known limitations
