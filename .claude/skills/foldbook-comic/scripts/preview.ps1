@@ -56,7 +56,6 @@ $toUrl = { param($p) "file:///" + ($p -replace '\\', '/') }
 # The book view: same file, with the rotation undone and the cells
 # reordered into reading order on a 2-column grid. `order` values map DOM
 # position (A1,A2,B1,B2,C1,C2,D1,D2) to page number (8,7,1,6,2,5,3,4).
-$layoutCss = & $toUrl (Join-Path (Split-Path $htmlPath -Parent) "..\layout.css" | Resolve-Path).Path
 $bookCss = @"
 body { flex-direction: row !important; align-items: flex-start !important; }
 .sheet { display: grid !important; grid-template-columns: 74.25mm 74.25mm !important;
@@ -69,7 +68,10 @@ body { flex-direction: row !important; align-items: flex-start !important; }
 .cell:nth-child(5) { order: 2 } .cell:nth-child(6) { order: 5 }
 .cell:nth-child(7) { order: 3 } .cell:nth-child(8) { order: 4 }
 "@
-$book =$src.Replace('href="../layout.css"', "href=""$layoutCss""").Replace('</style>', "$bookCss</style>")
+# book.html lives in OutDir, so a <base> keeps the page's relative links
+# (../layout.css, images next to the comic) resolving as in the original.
+$baseUrl = (& $toUrl (Split-Path $htmlPath -Parent)) + "/"
+$book = $src.Replace('<head>', "<head><base href=""$baseUrl"">").Replace('</style>', "$bookCss</style>")
 $bookHtml = Join-Path $OutDir "book.html"
 [IO.File]::WriteAllText($bookHtml, $book, (New-Object Text.UTF8Encoding $false))
 
