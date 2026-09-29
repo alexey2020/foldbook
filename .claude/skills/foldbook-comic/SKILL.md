@@ -1,6 +1,6 @@
 ---
 name: foldbook-comic
-description: Create a new printable foldbook comic sheet — one A4 sheet with two 8-page comics (front and back) drawn in inline SVG, saved as comics/<name>.html in the foldbook repo and printed straight from the browser. Claude invents the stories from a theme, a hero or nothing at all. Use whenever the user asks for a comic, a comic book, a mini-comic, a zine story, "комикс", "сделай комикс про…", "нарисуй историю для книжечки", or new content with pictures for the folded booklet, even if they don't say "foldbook" or "skill".
+description: Create a new printable foldbook comic sheet — one A4 sheet with two 8-page comics (front and back), drawn in inline SVG or with pictures generated through the Pollinations image API, saved as comics/<name>.html in the foldbook repo and printed straight from the browser. Claude invents the stories from a theme, a hero or nothing at all. Use whenever the user asks for a comic, a comic book, a mini-comic, a zine story, "комикс", "сделай комикс про…", "нарисуй историю для книжечки", or new content with pictures for the folded booklet, even if they don't say "foldbook" or "skill".
 ---
 
 # Foldbook comic
@@ -14,6 +14,22 @@ from the browser. Don't generate a PDF; the user prints the HTML directly
 
 `comics/comics.html` is the reference example: two finished comics built
 exactly the way this skill describes.
+
+## Art mode
+
+- **SVG** (default): every picture is drawn by hand in inline SVG. No
+  network, no cost, and characters are identical in every panel by
+  construction. See `references/drawing.md`.
+- **Generated art**: the pictures inside the panels come from an image
+  model (Pollinations: a reference image of each hero, then FLUX Klein
+  draws every panel from it); frames, bubbles, captions and titles are
+  still SVG on top. Richer pictures, costs a little API quota, needs the
+  key in `~/.pollinations-key`. See `references/generated-art.md`; the
+  example is `comics/moon-fishing-art.html`.
+
+Use generated art when the user asks for it ("с картинками",
+"сгенерируй картинки", "AI art", "как moon-fishing-art", "not SVG").
+Otherwise use SVG.
 
 ## Page structure (per comic)
 
@@ -78,7 +94,14 @@ same `a-*` / `b-*` page ids, so their pages can be copied as patterns.
 
 Read `references/drawing.md` before drawing. It covers the page coordinate
 system, panel layouts, character reuse, bubbles, text sizing and the
-spread's fold line.
+spread's fold line. All of it applies in both modes.
+
+In generated-art mode, also read `references/generated-art.md`, and do
+this in order: decide each page's panel layout first (the panel shapes
+set the picture sizes), write the two specs, generate and review the
+pictures, and only then place bubbles and captions over the pictures
+you actually got. Pictures go in `comics/<slug>/` next to the HTML,
+together with the specs.
 
 ### 3. Check it
 
@@ -109,7 +132,8 @@ two fix-and-preview rounds is normal; stop once nothing is broken.
 
 Tell the user, in their language:
 
-- the file path;
+- the file path (and, in generated-art mode, that the picture folder
+  must stay next to it);
 - a one-line summary of each story;
 - how to print: open the file in a browser, Ctrl+P, A4, margins None,
   scale 100%, headers/footers off, background graphics on, two-sided;
