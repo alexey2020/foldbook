@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Ёжик и ночь / Кто там в темноте?</title>
+<link rel="stylesheet" href="../layout.css">
+<style>
+  /* Screen-only chrome, same look as the editor. The printed geometry
+     (grid, rotation, fold/cut lines) comes entirely from layout.css. */
+  body {
+    background: #e5e5e5;
+    padding: 12mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8mm;
+    font-family: sans-serif;
+  }
+
+  .sheet {
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .sheet-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2mm;
+  }
+
+  .sheet-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #444;
+  }
+
+  .cell-inner {
+    padding: 3mm;
+  }
+
+  /* Every page is drawn in a 660x960 box, close to the 68.25 x 99 mm
+     area left inside the 3mm padding. */
+  .page {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  @media print {
+    body {
+      background: #fff;
+      padding: 0;
+      display: block;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .sheet {
+      box-shadow: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!--
+  Artwork. Each page is a <g id="..."> drawn in a 660x960 box, in normal
+  reading orientation; the cells below just <use> it and layout.css rotates
+  it into place. Spreads (pages 4|5 and 12|13) are drawn once in a 1320x960
+  box, and each of the two cells shows its half through its own viewBox.
+
+  Text inside <use> clones doesn't inherit from the page, so every page
+  group carries its own font attributes.
+
+  Comic A (front, pages 1-8):  a-1 a-2 a-3 a-45 a-6 a-7 a-8
+  Comic B (back, pages 9-16):  b-1 b-2 b-3 b-45 b-6 b-7 b-8
+-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <!-- ===== Gradients and patterns ===== -->
+  <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#1d2b53"/>
+    <stop offset=".55" stop-color="#6b4b8a"/>
+    <stop offset="1" stop-color="#f6a96b"/>
+  </linearGradient>
+  <radialGradient id="glowY">
+    <stop offset="0" stop-color="#fff59d" stop-opacity=".75"/>
+    <stop offset=".5" stop-color="#fff59d" stop-opacity=".25"/>
+    <stop offset="1" stop-color="#fff59d" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="glowG">
+    <stop offset="0" stop-color="#eeff8a" stop-opacity=".8"/>
+    <stop offset=".45" stop-color="#eeff8a" stop-opacity=".25"/>
+    <stop offset="1" stop-color="#eeff8a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="glowO">
+    <stop offset="0" stop-color="#ffcf70" stop-opacity=".8"/>
+    <stop offset=".5" stop-color="#ffb74d" stop-opacity=".28"/>
+    <stop offset="1" stop-color="#ffb74d" stop-opacity="0"/>
+  </radialGradient>
+  <pattern id="stones" width="120" height="70" patternUnits="userSpaceOnUse">
+    <rect width="120" height="70" fill="#3a2645"/>
+    <g fill="#4b3257" stroke="#2c1c36" stroke-width="3">
+      <rect x="4" y="4" width="70" height="28" rx="8"/>
+      <rect x="78" y="4" width="38" height="28" rx="8"/>
+      <rect x="4" y="38" width="36" height="28" rx="8"/>
+      <rect x="44" y="38" width="72" height="28" rx="8"/>
+    </g>
+  </pattern>
+
+  <!-- ===== Shared props ===== -->
+  <g id="star">
+    <path d="M0 -14 L3.5 -3.5 L14 0 L3.5 3.5 L0 14 L-3.5 3.5 L-14 0 L-3.5 -3.5 Z" fill="#fff8dc"/>
+  </g>
+
+  <!-- Firefly light, centred on the origin. -->
+  <g id="spark">
+    <circle r="20" fill="url(#glowG)"/>
+    <circle r="5" fill="#f4ff81"/>
+  </g>
+
+  <!-- Firefly, facing left, glowing tail at the origin, ~50 wide. -->
+  <g id="firefly" stroke="#222" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <circle r="40" fill="url(#glowG)" stroke="none"/>
+    <ellipse cx="-14" cy="-3" rx="15" ry="10" fill="#3b3b58"/>
+    <circle cx="0" cy="0" r="10" fill="#f4ff81"/>
+    <circle cx="-30" cy="-6" r="8" fill="#3b3b58"/>
+    <circle cx="-33" cy="-8" r="2.5" fill="#fff" stroke="none"/>
+    <path d="M-32 -13 Q-36 -24 -44 -24 M-28 -13 Q-28 -26 -20 -28" fill="none" stroke-width="2.5"/>
+    <ellipse cx="-8" cy="-16" rx="12" ry="7" fill="#fff" opacity=".8" transform="rotate(-25 -8 -16)"/>
+  </g>
+
+  <!-- Fir tree silhouette, origin at the bottom centre, 150 tall; colour from `color`. -->
+  <path id="fir" d="M0 -150 L26 -100 L12 -100 L40 -50 L20 -50 L52 0 L-52 0 L-20 -50 L-40 -50 L-12 -100 L-26 -100 Z" fill="currentColor"/>
+
+  <!-- Lantern, origin at the top of the handle, 76 tall. Glass takes `color`. -->
+  <g id="lantern" stroke="#222" stroke-width="5" stroke-linejoin="round">
+    <path d="M-14 14 Q0 -14 14 14" fill="none"/>
+    <rect x="-22" y="10" width="44" height="12" rx="3" fill="#c0392b"/>
+    <rect x="-17" y="22" width="34" height="42" rx="4" fill="currentColor"/>
+    <rect x="-22" y="64" width="44" height="12" rx="3" fill="#c0392b"/>
+  </g>
+
+  <!-- Candle on a dish, origin at the bottom centre, ~80 tall. -->
+  <g id="candle" stroke="#222" stroke-width="4" stroke-linejoin="round">
+    <ellipse cx="0" cy="0" rx="26" ry="8" fill="#c9a15b"/>
+    <rect x="-10" y="-50" width="20" height="48" rx="3" fill="#fff4e0"/>
+    <path d="M0 -50 L0 -56" fill="none" stroke-width="3"/>
+    <path d="M0 -80 Q12 -62 0 -54 Q-12 -62 0 -80 Z" fill="#ffb300" stroke-width="3"/>
+    <path d="M0 -70 Q5 -62 0 -58 Q-5 -62 0 -70 Z" fill="#fff59d" stroke="none"/>
+  </g>
+
+  <!-- Barrel, origin at the bottom centre, 130 x 172. -->
+  <g id="barrel" stroke="#222" stroke-width="6" stroke-linejoin="round">
+    <path d="M-55 0 Q-72 -80 -55 -160 L55 -160 Q72 -80 55 0 Z" fill="#a0643a"/>
+    <path d="M-20 -2 Q-26 -80 -20 -158 M20 -2 Q26 -80 20 -158" fill="none" stroke="#7a4a2a" stroke-width="4"/>
+    <path d="M-59 -30 Q0 -22 59 -30 M-59 -130 Q0 -122 59 -130" fill="none" stroke="#4a3020" stroke-width="8"/>
+    <ellipse cx="0" cy="-160" rx="55" ry="12" fill="#7a4a2a"/>
+  </g>
+
+  <g id="apple" stroke="#222" stroke-width="3" stroke-linejoin="round">
+    <circle r="14" fill="#e0463a"/>
+    <path d="M0 -13 L2 -22" fill="none"/>
+    <path d="M2 -20 Q12 -26 16 -18 Q8 -14 2 -20 Z" fill="#7ccf6a" stroke-width="2"/>
+  </g>
+
+  <!-- ===== Tishka the hedgehog, ~250x208, facing right, feet at y=208. =====
+       Face parts are separate; arm props (lantern, candle, apple) too. -->
+  <g id="tish" stroke="#222" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+    <ellipse cx="82" cy="198" rx="24" ry="10" fill="#4a2f1a"/>
+    <ellipse cx="150" cy="198" rx="24" ry="10" fill="#4a2f1a"/>
+    <path d="M24 158 L-4 157 L18 139 L-9 131 L17 119 L-7 104 L21 100 L2 79 L30 82 L16 57 L43 67 L36 39 L59 56 L59 27 L78 49 L85 21 L98 47 L112 22 L117 50 L137 30 L135 58 L160 44 L151 71 L178 63 L163 86 L191 86 L170 105 L182 165 L60 190 Z" fill="#6b4526"/>
+    <path d="M32 132 L52 120 M44 94 L62 88 M76 64 L88 76 M118 60 L116 76" fill="none" stroke="#8a5d38" stroke-width="4"/>
+    <ellipse cx="120" cy="166" rx="62" ry="34" fill="#e8c9a0"/>
+    <circle cx="132" cy="78" r="13" fill="#e8c9a0"/>
+    <ellipse cx="160" cy="118" rx="50" ry="44" fill="#f1d8b0" stroke-width="10"/>
+    <ellipse cx="200" cy="132" rx="32" ry="20" fill="#f1d8b0" stroke-width="10"/>
+    <ellipse cx="160" cy="118" rx="50" ry="44" fill="#f1d8b0" stroke="none"/>
+    <ellipse cx="200" cy="132" rx="32" ry="20" fill="#f1d8b0" stroke="none"/>
+    <circle cx="228" cy="128" r="10" fill="#222"/>
+    <circle cx="225" cy="124" r="3" fill="#fff" stroke="none"/>
+    <circle cx="148" cy="142" r="9" fill="#f28b82" opacity=".6" stroke="none"/>
+  </g>
+  <g id="tish-eyes">
+    <circle cx="156" cy="106" r="7" fill="#222"/>
+    <circle cx="186" cy="102" r="7" fill="#222"/>
+    <circle cx="158" cy="103" r="2.5" fill="#fff"/>
+    <circle cx="188" cy="99" r="2.5" fill="#fff"/>
+  </g>
+  <g id="tish-eyes-wide" stroke="#222" stroke-width="4">
+    <circle cx="154" cy="104" r="13" fill="#fff"/>
+    <circle cx="186" cy="100" r="13" fill="#fff"/>
+    <circle cx="157" cy="106" r="5" fill="#222" stroke="none"/>
+    <circle cx="189" cy="102" r="5" fill="#222" stroke="none"/>
+  </g>
+  <path id="tish-eyes-closed" d="M146 106 Q156 114 166 106 M176 102 Q186 110 196 102" fill="none" stroke="#222" stroke-width="4" stroke-linecap="round"/>
+  <path id="tish-eyes-happy" d="M146 110 Q156 98 166 110 M176 106 Q186 94 196 106" fill="none" stroke="#222" stroke-width="4" stroke-linecap="round"/>
+  <path id="tish-smile" d="M190 144 Q202 152 214 142" fill="none" stroke="#222" stroke-width="4" stroke-linecap="round"/>
+  <ellipse id="tish-o" cx="204" cy="146" rx="7" ry="8" fill="#7a2e2e" stroke="#222" stroke-width="3"/>
+  <path id="tish-wobble" d="M186 146 q5 -5 10 0 t10 0 t10 0" fill="none" stroke="#222" stroke-width="3.5" stroke-linecap="round"/>
+  <path id="tish-laugh" d="M188 140 Q204 162 220 138 Z" fill="#7a2e2e" stroke="#222" stroke-width="3.5" stroke-linejoin="round"/>
+
+  <!-- Arm holding the lantern; glass colour from the <use>'s `color`. -->
+  <g id="tish-lantern" stroke-linecap="round">
+    <path d="M160 168 L236 152" stroke="#222" stroke-width="22"/>
+    <path d="M160 168 L236 152" stroke="#4a2f1a" stroke-width="12"/>
+    <use href="#lantern" transform="translate(240 146) scale(.7)"/>
+    <circle cx="238" cy="150" r="10" fill="#4a2f1a" stroke="#222" stroke-width="5"/>
+  </g>
+  <path id="tish-flame" d="M240 165 Q247 176 240 186 Q233 176 240 165 Z" fill="#ff9800" stroke="#222" stroke-width="2"/>
+
+  <!-- Arm holding a candle; flame centre at (236,132). -->
+  <g id="tish-candle" stroke-linecap="round">
+    <path d="M160 168 L232 160" stroke="#222" stroke-width="22"/>
+    <path d="M160 168 L232 160" stroke="#4a2f1a" stroke-width="12"/>
+    <use href="#candle" transform="translate(236 184) scale(.8)"/>
+    <circle cx="236" cy="162" r="10" fill="#4a2f1a" stroke="#222" stroke-width="5"/>
+  </g>
+
+  <g id="tish-apple" stroke-linecap="round">
+    <path d="M160 168 L216 166" stroke="#222" stroke-width="22"/>
+    <path d="M160 168 L216 166" stroke="#4a2f1a" stroke-width="12"/>
+    <use href="#apple" transform="translate(238 172) scale(1.3)"/>
+    <circle cx="220" cy="168" r="10" fill="#4a2f1a" stroke="#222" stroke-width="5"/>
+  </g>
+
+  <!-- ===== Mouse, facing left, origin at the bottom centre, ~125 tall. =====
+       #mouse-sil is a flat silhouette in `color` (also used for shadows). -->
+  <g id="mouse-sil" fill="currentColor">
+    <path d="M26 -12 Q70 -4 72 -40 Q74 -70 56 -78" fill="none" stroke="currentColor" stroke-width="6"/>
+    <ellipse cx="-14" cy="-3" rx="12" ry="5"/>
+    <ellipse cx="14" cy="-3" rx="12" ry="5"/>
+    <ellipse cx="0" cy="-34" rx="30" ry="34"/>
+    <circle cx="-34" cy="-100" r="16"/>
+    <circle cx="6" cy="-104" r="16"/>
+    <ellipse cx="-38" cy="-72" rx="14" ry="10"/>
+    <circle cx="-12" cy="-78" r="27"/>
+  </g>
+  <g id="mouse-arms-up" fill="none" stroke="currentColor" stroke-linecap="round">
+    <path d="M-18 -52 L-58 -110 M16 -54 L46 -118" stroke-width="14"/>
+    <path d="M-58 -110 l-18 -8 M-58 -110 l-8 -18 M-58 -110 l8 -18 M46 -118 l-6 -20 M46 -118 l10 -16 M46 -118 l20 -4" stroke-width="7"/>
+  </g>
+  <g id="mouse">
+    <path d="M26 -12 Q70 -4 72 -40 Q74 -70 56 -78" fill="none" stroke="#222" stroke-width="12" stroke-linecap="round"/>
+    <use href="#mouse-sil" color="#b7aec4" stroke="#222" stroke-width="4" stroke-linejoin="round"/>
+    <ellipse cx="-6" cy="-28" rx="16" ry="20" fill="#e6e0ec"/>
+    <circle cx="-36" cy="-104" r="8" fill="#f2a7b4"/>
+    <circle cx="6" cy="-110" r="8" fill="#f2a7b4"/>
+    <circle cx="-52" cy="-73" r="4.5" fill="#e57a8a" stroke="#222" stroke-width="2"/>
+  </g>
+  <g id="mouse-eyes">
+    <circle cx="-26" cy="-84" r="4.5" fill="#222"/>
+    <circle cx="-8" cy="-86" r="4.5" fill="#222"/>
+    <circle cx="-25" cy="-86" r="1.5" fill="#fff"/>
+    <circle cx="-7" cy="-88" r="1.5" fill="#fff"/>
+  </g>
+  <g id="mouse-eyes-wide" stroke="#222" stroke-width="2.5">
+    <circle cx="-27" cy="-85" r="8" fill="#fff"/>
+    <circle cx="-7" cy="-87" r="8" fill="#fff"/>
+    <circle cx="-29" cy="-84" r="3.5" fill="#222" stroke="none"/>
+    <circle cx="-9" cy="-86" r="3.5" fill="#222" stroke="none"/>
+  </g>
+  <path id="mouse-eyes-happy" d="M-31 -83 Q-26 -90 -21 -83 M-13 -85 Q-8 -92 -3 -85" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>
+  <path id="mouse-smile" d="M-48 -66 Q-42 -61 -36 -66" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse id="mouse-o" cx="-42" cy="-63" rx="3.5" ry="4.5" fill="#7a2e2e" stroke="#222" stroke-width="2"/>
+  <!-- Arm holding a small candle; flame centre at (-56,-43). -->
+  <g id="mouse-hold" stroke-linecap="round">
+    <path d="M-14 -46 L-50 -30" stroke="#222" stroke-width="11"/>
+    <path d="M-14 -46 L-50 -30" stroke="#b7aec4" stroke-width="5"/>
+    <use href="#candle" transform="translate(-56 -12) scale(.5)"/>
+    <circle cx="-52" cy="-28" r="5" fill="#b7aec4" stroke="#222" stroke-width="3"/>
+  </g>
+  <g id="mouse-apple" stroke-linecap="round">
+    <path d="M-14 -46 L-42 -40" stroke="#222" stroke-width="11"/>
+    <path d="M-14 -46 L-42 -40" stroke="#b7aec4" stroke-width="5"/>
+    <use href="#apple" transform="translate(-56 -40) scale(.9)"/>
+    <circle cx="-44" cy="-40" r="5" fill="#b7aec4" stroke="#222" stroke-width="3"/>
+  </g>
+
+  <!-- ===== Comic No. 3: Ёжик и ночь (pages 1-8) ===== -->
+
+  <!-- Page 1: front cover -->
+  <g id="a-1" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="940">
+      <rect width="640" height="940" fill="#1d2b53"/>
+      <use href="#star" x="470" y="210"/>
+      <use href="#star" x="600" y="260"/>
+      <use href="#star" x="80" y="340"/>
+      <use href="#star" x="300" y="330"/>
+      <use href="#star" x="580" y="480"/>
+      <use href="#star" x="40" y="520"/>
+      <use href="#star" x="200" y="430"/>
+      <circle cx="470" cy="370" r="56" fill="#fff3c4" stroke="#222" stroke-width="5"/>
+      <circle cx="497" cy="350" r="50" fill="#1d2b53"/>
+      <g color="#16223f">
+        <use href="#fir" transform="translate(40 850) scale(1.6)"/>
+        <use href="#fir" transform="translate(170 855) scale(1.1)"/>
+        <use href="#fir" transform="translate(450 855) scale(1.2)"/>
+        <use href="#fir" transform="translate(570 850) scale(1.8)"/>
+      </g>
+      <rect y="840" width="640" height="100" fill="#13202f"/>
+      <path d="M0 840 L640 840" stroke="#222" stroke-width="5"/>
+      <circle cx="486" cy="800" r="250" fill="url(#glowY)"/>
+      <use href="#spark" x="330" y="500"/>
+      <use href="#spark" x="600" y="610"/>
+      <use href="#spark" x="60" y="640"/>
+      <use href="#spark" x="250" y="560"/>
+      <g transform="translate(90 518) scale(1.65)">
+        <use href="#tish"/><use href="#tish-lantern" color="#fff176"/><use href="#tish-flame"/>
+        <use href="#tish-eyes-wide"/><use href="#tish-wobble"/>
+      </g>
+      <text x="40" y="150" font-size="130" fill="#f4ff81" stroke="#222" stroke-width="12" paint-order="stroke">ЁЖИК</text>
+      <text x="40" y="266" font-size="110" fill="#f4ff81" stroke="#222" stroke-width="12" paint-order="stroke">И НОЧЬ</text>
+      <circle cx="570" cy="84" r="50" fill="#4a6fa5" stroke="#222" stroke-width="6"/>
+      <text x="570" y="96" font-size="32" text-anchor="middle" fill="#fff">No.3</text>
+      <text x="320" y="905" font-size="30" text-anchor="middle" fill="#f4ff81">ИСТОРИЯ ПРО ТИШКУ</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="940" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 2: setup -->
+  <g id="a-2" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="440">
+      <rect width="640" height="440" fill="url(#dusk)"/>
+      <use href="#star" x="600" y="40"/>
+      <use href="#star" x="330" y="130"/>
+      <circle cx="110" cy="410" r="70" fill="#ffb86b" stroke="#222" stroke-width="5"/>
+      <rect y="405" width="640" height="40" fill="#2f4a3a"/>
+      <path d="M0 405 L640 405" stroke="#222" stroke-width="5"/>
+      <path d="M300 445 Q380 190 660 170 L660 445 Z" fill="#2f4a3a" stroke="#222" stroke-width="6"/>
+      <path d="M470 445 L470 360 A45 45 0 0 1 560 360 L560 445 Z" fill="#6b4526" stroke="#222" stroke-width="6"/>
+      <circle cx="545" cy="400" r="6" fill="#ffd23f" stroke="#222" stroke-width="3"/>
+      <circle cx="430" cy="330" r="22" fill="#ffd54f" stroke="#222" stroke-width="5"/>
+      <path d="M408 330 L452 330 M430 308 L430 352" stroke="#222" stroke-width="4"/>
+      <g transform="translate(130 240) scale(.8)">
+        <use href="#tish"/><use href="#tish-eyes-wide"/><use href="#tish-wobble"/>
+      </g>
+      <rect x="16" y="16" width="540" height="56" fill="#fff3b0" stroke="#222" stroke-width="5"/>
+      <text x="32" y="54" font-size="30" fill="#222">Ёжик Тишка боялся темноты.</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="440" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="470" width="640" height="480">
+      <rect width="640" height="480" fill="#5a4030"/>
+      <path d="M0 60 Q120 90 200 40 M380 20 Q450 80 640 60 M0 330 Q60 300 110 340" fill="none" stroke="#4a3526" stroke-width="10"/>
+      <circle cx="540" cy="300" r="70" fill="#1d2b53" stroke="#222" stroke-width="7"/>
+      <use href="#star" x="515" y="280"/>
+      <path d="M470 300 L610 300 M540 230 L540 370" stroke="#222" stroke-width="6"/>
+      <rect y="440" width="640" height="40" fill="#3d2a1e"/>
+      <path d="M0 440 L640 440" stroke="#222" stroke-width="5"/>
+      <circle cx="400" cy="394" r="230" fill="url(#glowY)"/>
+      <g transform="translate(40 130) scale(1.5)">
+        <use href="#tish"/><use href="#tish-lantern" color="#fff176"/><use href="#tish-flame"/>
+        <use href="#tish-eyes-happy"/><use href="#tish-smile"/>
+      </g>
+      <rect x="290" y="24" width="330" height="116" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M330 137 L310 212 L365 137" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="455" y="74" font-size="34" text-anchor="middle" fill="#222">Без фонарика —</text>
+      <text x="455" y="120" font-size="34" text-anchor="middle" fill="#222">ни шагу!</text>
+    </svg>
+    <rect x="10" y="470" width="640" height="480" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 3: the lantern goes out -->
+  <g id="a-3" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="460">
+      <rect width="640" height="460" fill="#14203f"/>
+      <use href="#star" x="470" y="50"/>
+      <use href="#star" x="600" y="140"/>
+      <use href="#star" x="560" y="40"/>
+      <use href="#star" x="80" y="160"/>
+      <g color="#1b2a4a">
+        <use href="#fir" transform="translate(40 330) scale(1.5)"/>
+        <use href="#fir" transform="translate(150 330) scale(1.2)"/>
+        <use href="#fir" transform="translate(360 330) scale(1.4)"/>
+        <use href="#fir" transform="translate(590 330) scale(1.6)"/>
+      </g>
+      <rect y="320" width="640" height="140" fill="#1a2a33"/>
+      <path d="M0 320 L640 320" stroke="#222" stroke-width="5"/>
+      <ellipse cx="320" cy="400" rx="360" ry="40" fill="#22363f"/>
+      <circle cx="448" cy="352" r="120" fill="url(#glowY)" opacity=".6"/>
+      <g transform="translate(220 185) scale(.95)">
+        <use href="#tish"/><use href="#tish-lantern" color="#fff59d"/><use href="#tish-flame"/>
+        <use href="#tish-eyes"/><use href="#tish-wobble"/>
+      </g>
+      <path d="M474 322 l14 -10 M480 352 l18 0 M474 382 l14 10" stroke="#fff59d" stroke-width="4"/>
+      <text x="540" y="250" font-size="30" text-anchor="middle" fill="#fff59d" stroke="#222" stroke-width="6" paint-order="stroke" transform="rotate(-6 540 250)">МИГ… МИГ…</text>
+      <rect x="16" y="16" width="410" height="92" fill="#fff3b0" stroke="#222" stroke-width="5"/>
+      <text x="32" y="54" font-size="30" fill="#222">Однажды Тишка шёл</text>
+      <text x="32" y="92" font-size="30" fill="#222">домой поздно-поздно…</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="490" width="640" height="460">
+      <rect width="640" height="460" fill="#05070f"/>
+      <g opacity=".22" transform="translate(190 150) scale(1.1)">
+        <use href="#tish"/><use href="#tish-lantern" color="#555"/>
+      </g>
+      <g transform="translate(190 150) scale(1.1)">
+        <use href="#tish-eyes-wide"/>
+      </g>
+      <path d="M454 300 q-14 -20 0 -40 t0 -40" fill="none" stroke="#9e9e9e" stroke-width="6" opacity=".8"/>
+      <text x="520" y="170" font-size="80" text-anchor="middle" fill="#cfd8dc" stroke="#222" stroke-width="10" paint-order="stroke" transform="rotate(-8 520 170)">ПФФ!</text>
+      <rect x="24" y="24" width="280" height="96" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M190 117 L270 168 L235 117" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="164" y="86" font-size="36" text-anchor="middle" fill="#222">Ой-ой-ой…</text>
+    </svg>
+    <rect x="10" y="490" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Pages 4|5: the dark lights up (1320x960) -->
+  <g id="a-45" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="1300" height="940">
+      <rect width="1300" height="940" fill="#0f1a33"/>
+      <use href="#star" x="80" y="140"/>
+      <use href="#star" x="560" y="110"/>
+      <use href="#star" x="760" y="60"/>
+      <use href="#star" x="1200" y="50"/>
+      <use href="#star" x="1000" y="40"/>
+      <circle cx="980" cy="420" r="480" fill="url(#glowG)"/>
+      <g color="#16223f">
+        <use href="#fir" transform="translate(40 760) scale(1.8)"/>
+        <use href="#fir" transform="translate(170 760) scale(1.4)"/>
+        <use href="#fir" transform="translate(520 760) scale(2)"/>
+        <use href="#fir" transform="translate(640 760) scale(1.5)"/>
+        <use href="#fir" transform="translate(760 760) scale(1.9)"/>
+        <use href="#fir" transform="translate(900 760) scale(1.3)"/>
+        <use href="#fir" transform="translate(1080 760) scale(2.1)"/>
+        <use href="#fir" transform="translate(1230 760) scale(1.6)"/>
+      </g>
+      <rect y="750" width="1300" height="190" fill="#101c2c"/>
+      <path d="M0 750 L1300 750" stroke="#222" stroke-width="5"/>
+      <use href="#spark" x="720" y="160"/>
+      <use href="#spark" x="790" y="240"/>
+      <use href="#spark" x="850" y="130"/>
+      <use href="#spark" x="960" y="200"/>
+      <use href="#spark" x="1020" y="120"/>
+      <use href="#spark" x="1080" y="260"/>
+      <use href="#spark" x="1140" y="180"/>
+      <use href="#spark" x="1200" y="240"/>
+      <use href="#spark" x="1250" y="140"/>
+      <use href="#spark" x="1160" y="90"/>
+      <use href="#spark" x="740" y="380"/>
+      <use href="#spark" x="820" y="450"/>
+      <use href="#spark" x="880" y="380"/>
+      <use href="#spark" x="950" y="470"/>
+      <use href="#spark" x="1010" y="360"/>
+      <use href="#spark" x="1070" y="430"/>
+      <use href="#spark" x="1130" y="350"/>
+      <use href="#spark" x="1190" y="420"/>
+      <use href="#spark" x="1250" y="480"/>
+      <use href="#spark" x="760" y="560"/>
+      <use href="#spark" x="840" y="620"/>
+      <use href="#spark" x="910" y="560"/>
+      <use href="#spark" x="980" y="640"/>
+      <use href="#spark" x="1050" y="560"/>
+      <use href="#spark" x="1120" y="620"/>
+      <use href="#spark" x="1180" y="560"/>
+      <use href="#spark" x="1240" y="650"/>
+      <use href="#spark" x="1000" y="280"/>
+      <use href="#spark" x="700" y="300"/>
+      <use href="#spark" x="600" y="420"/>
+      <use href="#spark" x="560" y="300"/>
+      <use href="#spark" x="620" y="560"/>
+      <use href="#spark" x="880" y="700"/>
+      <use href="#spark" x="1060" y="700"/>
+      <use href="#spark" x="700" y="680"/>
+      <use href="#spark" transform="translate(830 300) scale(1.6)"/>
+      <use href="#spark" transform="translate(1180 300) scale(1.5)"/>
+      <use href="#spark" transform="translate(1000 520) scale(1.7)"/>
+      <use href="#spark" transform="translate(780 500) scale(1.4)"/>
+      <use href="#firefly" transform="translate(930 330) scale(1.5)"/>
+      <use href="#firefly" transform="translate(1150 520) scale(1.3)"/>
+      <use href="#firefly" transform="translate(820 200) scale(1.1)"/>
+      <g transform="translate(110 440) scale(1.5)">
+        <use href="#tish"/><use href="#tish-lantern" color="#607d8b"/>
+        <use href="#tish-eyes-wide"/><use href="#tish-o"/>
+      </g>
+      <rect x="30" y="30" width="540" height="56" fill="#fff3b0" stroke="#222" stroke-width="5"/>
+      <text x="46" y="68" font-size="30" fill="#222">И вдруг темнота засветилась!</text>
+      <rect x="210" y="150" width="260" height="100" rx="30" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M300 247 L320 452 L350 247" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="340" y="220" font-size="56" text-anchor="middle" fill="#222">Ух ты!</text>
+    </svg>
+    <rect x="10" y="10" width="1300" height="940" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 6: a new friend -->
+  <g id="a-6" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="440">
+      <rect width="640" height="440" fill="#1d2b53"/>
+      <use href="#star" x="60" y="60"/>
+      <use href="#star" x="220" y="40"/>
+      <use href="#star" x="600" y="380"/>
+      <circle cx="480" cy="310" r="230" fill="url(#glowG)"/>
+      <g transform="translate(-110 20) scale(2.6)">
+        <use href="#tish"/><use href="#tish-eyes"/><use href="#tish-smile"/>
+      </g>
+      <use href="#firefly" transform="translate(500 300) scale(2)"/>
+      <rect x="340" y="24" width="280" height="110" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M470 131 L462 238 L500 131" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="480" y="70" font-size="34" text-anchor="middle" fill="#222">Не бойся!</text>
+      <text x="480" y="114" font-size="34" text-anchor="middle" fill="#222">Мы светим!</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="440" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="470" width="640" height="480">
+      <rect width="640" height="480" fill="#14203f"/>
+      <use href="#star" x="470" y="40"/>
+      <use href="#star" x="600" y="110"/>
+      <use href="#star" x="440" y="150"/>
+      <g color="#1b2a4a">
+        <use href="#fir" transform="translate(40 430) scale(1.6)"/>
+        <use href="#fir" transform="translate(180 430) scale(1.2)"/>
+        <use href="#fir" transform="translate(330 430) scale(1.5)"/>
+      </g>
+      <rect y="420" width="640" height="60" fill="#1a2a33"/>
+      <path d="M0 420 L640 420" stroke="#222" stroke-width="5"/>
+      <path d="M360 485 Q450 230 660 220 L660 485 Z" fill="#2f4a3a" stroke="#222" stroke-width="6"/>
+      <circle cx="540" cy="400" r="90" fill="url(#glowY)"/>
+      <path d="M500 485 L500 390 A40 40 0 0 1 580 390 L580 485 Z" fill="#ffd54f" stroke="#222" stroke-width="6"/>
+      <g transform="translate(80 290) scale(.7)">
+        <use href="#tish"/><use href="#tish-lantern" color="#607d8b"/>
+        <use href="#tish-eyes-happy"/><use href="#tish-smile"/>
+      </g>
+      <use href="#spark" x="200" y="330"/>
+      <use href="#spark" x="260" y="290"/>
+      <use href="#spark" x="300" y="360"/>
+      <use href="#spark" x="350" y="330"/>
+      <use href="#spark" x="390" y="380"/>
+      <use href="#spark" x="430" y="350"/>
+      <use href="#spark" x="460" y="400"/>
+      <use href="#spark" x="130" y="280"/>
+      <use href="#spark" x="330" y="270"/>
+      <use href="#firefly" transform="translate(290 240) scale(.8)"/>
+      <rect x="16" y="16" width="390" height="92" fill="#fff3b0" stroke="#222" stroke-width="5"/>
+      <text x="32" y="54" font-size="30" fill="#222">Светлячки проводили</text>
+      <text x="32" y="92" font-size="30" fill="#222">Тишку до дома.</text>
+    </svg>
+    <rect x="10" y="470" width="640" height="480" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 7: home, good night -->
+  <g id="a-7" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="460">
+      <rect width="640" height="460" fill="#4a3526"/>
+      <path d="M0 40 Q140 80 240 30 M300 420 Q360 380 420 420" fill="none" stroke="#3d2a1e" stroke-width="10"/>
+      <circle cx="480" cy="160" r="100" fill="#1d2b53" stroke="#222" stroke-width="8"/>
+      <use href="#spark" x="455" y="150"/>
+      <use href="#spark" x="505" y="185"/>
+      <use href="#spark" x="475" y="110"/>
+      <use href="#spark" x="520" y="135"/>
+      <path d="M380 160 L580 160 M480 60 L480 260" stroke="#222" stroke-width="6"/>
+      <rect y="420" width="640" height="40" fill="#3d2a1e"/>
+      <path d="M0 420 L640 420" stroke="#222" stroke-width="5"/>
+      <rect x="20" y="250" width="40" height="170" rx="8" fill="#8d5a3b" stroke="#222" stroke-width="6"/>
+      <rect x="20" y="340" width="340" height="80" rx="14" fill="#8d5a3b" stroke="#222" stroke-width="6"/>
+      <g transform="translate(70 130)">
+        <use href="#tish"/><use href="#tish-eyes-happy"/><use href="#tish-smile"/>
+      </g>
+      <rect x="50" y="300" width="300" height="90" rx="20" fill="#4a6fa5" stroke="#222" stroke-width="6"/>
+      <g fill="#bfe3ff"><circle cx="100" cy="330" r="8"/><circle cx="170" cy="360" r="8"/><circle cx="240" cy="325" r="8"/><circle cx="310" cy="360" r="8"/></g>
+      <rect x="24" y="24" width="220" height="76" rx="26" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M130 97 L168 138 L170 97" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="134" y="74" font-size="34" text-anchor="middle" fill="#222">Спасибо!</text>
+      <rect x="395" y="290" width="230" height="76" rx="26" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M470 293 L482 238 L505 293" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="510" y="340" font-size="32" text-anchor="middle" fill="#222">До завтра!</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="490" width="640" height="460">
+      <rect width="640" height="460" fill="#2b1f18"/>
+      <circle cx="520" cy="200" r="80" fill="#0f1a33" stroke="#222" stroke-width="8"/>
+      <use href="#spark" x="500" y="190"/>
+      <use href="#spark" x="540" y="220"/>
+      <use href="#spark" x="530" y="160"/>
+      <path d="M440 200 L600 200 M520 120 L520 280" stroke="#222" stroke-width="6"/>
+      <rect y="420" width="640" height="40" fill="#1e1510"/>
+      <path d="M0 420 L640 420" stroke="#222" stroke-width="5"/>
+      <rect x="400" y="330" width="90" height="90" fill="#6b4526" stroke="#222" stroke-width="6"/>
+      <use href="#lantern" color="#607d8b" transform="translate(445 256) scale(.95)"/>
+      <rect x="20" y="250" width="40" height="170" rx="8" fill="#6b4a33" stroke="#222" stroke-width="6"/>
+      <rect x="20" y="340" width="340" height="80" rx="14" fill="#6b4a33" stroke="#222" stroke-width="6"/>
+      <g transform="translate(70 140)">
+        <use href="#tish"/><use href="#tish-eyes-closed"/><use href="#tish-smile"/>
+      </g>
+      <rect x="50" y="300" width="300" height="90" rx="20" fill="#3a5683" stroke="#222" stroke-width="6"/>
+      <g fill="#8fb3d9"><circle cx="100" cy="330" r="8"/><circle cx="170" cy="360" r="8"/><circle cx="240" cy="325" r="8"/><circle cx="310" cy="360" r="8"/></g>
+      <text x="310" y="240" font-size="30" fill="#fff">z</text>
+      <text x="340" y="205" font-size="40" fill="#fff">z</text>
+      <text x="378" y="165" font-size="50" fill="#fff">Z</text>
+      <rect x="16" y="16" width="460" height="92" fill="#fff3b0" stroke="#222" stroke-width="5"/>
+      <text x="32" y="54" font-size="30" fill="#222">Теперь Тишка знает:</text>
+      <text x="32" y="92" font-size="30" fill="#222">в темноте живут друзья.</text>
+    </svg>
+    <rect x="10" y="490" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 8: back cover -->
+  <g id="a-8" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="940">
+      <rect width="640" height="940" fill="#1d2b53"/>
+      <use href="#star" x="80" y="80"/>
+      <use href="#star" x="230" y="140"/>
+      <use href="#star" x="580" y="300"/>
+      <use href="#star" x="60" y="330"/>
+      <use href="#star" x="330" y="60"/>
+      <circle cx="480" cy="160" r="60" fill="#fff3c4" stroke="#222" stroke-width="5"/>
+      <circle cx="508" cy="140" r="54" fill="#1d2b53"/>
+      <path d="M-20 945 Q200 420 700 470 L700 945 Z" fill="#2f4a3a" stroke="#222" stroke-width="6"/>
+      <circle cx="330" cy="560" r="200" fill="url(#glowY)"/>
+      <circle cx="330" cy="560" r="60" fill="#ffe082" stroke="#222" stroke-width="7"/>
+      <path d="M270 560 L390 560 M330 500 L330 620" stroke="#222" stroke-width="6"/>
+      <use href="#spark" x="240" y="480"/>
+      <use href="#spark" x="430" y="500"/>
+      <use href="#spark" x="380" y="420"/>
+      <use href="#spark" x="200" y="580"/>
+      <use href="#spark" x="470" y="610"/>
+      <use href="#spark" x="290" y="400"/>
+      <text x="320" y="760" font-size="100" text-anchor="middle" fill="#f4ff81" stroke="#222" stroke-width="12" paint-order="stroke">КОНЕЦ</text>
+      <text x="320" y="820" font-size="28" text-anchor="middle" fill="#fff">FOLDBOOK COMICS · No. 3</text>
+      <text x="320" y="870" font-size="24" text-anchor="middle" fill="#cfe3ff">Переверни лист и сложи заново —</text>
+      <text x="320" y="905" font-size="24" text-anchor="middle" fill="#cfe3ff">там No. 4: «Кто там в темноте?»</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="940" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- ===== Comic No. 4: Кто там в темноте? (pages 9-16) ===== -->
+
+  <!-- Page 9: front cover -->
+  <g id="b-1" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="940">
+      <rect width="640" height="940" fill="url(#stones)"/>
+      <rect width="640" height="940" fill="#1a0f22" opacity=".45"/>
+      <g transform="translate(420 700) scale(3.4)" color="#1a0d24" opacity=".9">
+        <use href="#mouse-sil"/><use href="#mouse-arms-up"/>
+      </g>
+      <rect y="860" width="640" height="80" fill="#2a1a33"/>
+      <path d="M0 860 L640 860" stroke="#222" stroke-width="5"/>
+      <circle cx="382" cy="751" r="300" fill="url(#glowO)"/>
+      <g transform="translate(40 560) scale(1.45)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes-wide"/><use href="#tish-wobble"/>
+      </g>
+      <text x="40" y="200" font-size="104" fill="#ffcf70" stroke="#222" stroke-width="12" paint-order="stroke">КТО ТАМ</text>
+      <text x="40" y="292" font-size="76" fill="#ffcf70" stroke="#222" stroke-width="10" paint-order="stroke">В ТЕМНОТЕ?</text>
+      <circle cx="580" cy="70" r="46" fill="#c8553d" stroke="#222" stroke-width="6"/>
+      <text x="580" y="81" font-size="30" text-anchor="middle" fill="#fff">No.4</text>
+      <text x="320" y="912" font-size="28" text-anchor="middle" fill="#ffcf70">ЕЩЁ ОДНА ИСТОРИЯ ПРО ТИШКУ</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="940" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 10: down to the cellar -->
+  <g id="b-2" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="440">
+      <rect width="640" height="440" fill="#e0b877"/>
+      <path d="M80 0 L80 350 M200 0 L200 350 M320 0 L320 350 M440 0 L440 350 M560 0 L560 350" stroke="#d4a862" stroke-width="10"/>
+      <rect x="40" y="130" width="140" height="120" fill="#1d2b53" stroke="#222" stroke-width="6"/>
+      <use href="#star" x="80" y="170"/>
+      <path d="M110 130 L110 250 M40 190 L180 190" stroke="#222" stroke-width="5"/>
+      <rect y="350" width="640" height="90" fill="#8a5a3a"/>
+      <path d="M0 350 L640 350 M0 395 L640 395" stroke="#222" stroke-width="5"/>
+      <path d="M380 370 L600 370 L590 250 L390 250 Z" fill="#a0643a" stroke="#222" stroke-width="6"/>
+      <path d="M450 252 L446 368 M520 252 L522 368" stroke="#7a4a2a" stroke-width="5"/>
+      <path d="M380 370 L600 370 L630 440 L350 440 Z" fill="#140b1a" stroke="#222" stroke-width="6"/>
+      <circle cx="310" cy="298" r="110" fill="url(#glowO)"/>
+      <g transform="translate(110 185) scale(.85)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes-wide"/><use href="#tish-wobble"/>
+      </g>
+      <rect x="16" y="16" width="510" height="92" fill="#fff3b0" stroke="#222" stroke-width="5"/>
+      <text x="32" y="54" font-size="30" fill="#222">Мама попросила Тишку</text>
+      <text x="32" y="92" font-size="30" fill="#222">принести яблок из погреба.</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="440" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="470" width="640" height="480">
+      <rect width="640" height="480" fill="#1f1328"/>
+      <rect width="640" height="480" fill="url(#stones)" opacity=".5"/>
+      <circle cx="396" cy="302" r="260" fill="url(#glowO)"/>
+      <path d="M-10 290 L150 290 L150 378 L380 378 L380 450 L650 450 L650 490 L-10 490 Z" fill="#7a4a2a" stroke="#222" stroke-width="6"/>
+      <path d="M-10 310 L150 310 M150 398 L380 398 M380 470 L650 470" stroke="#5b3a1e" stroke-width="5"/>
+      <g transform="translate(160 170)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes"/><use href="#tish-wobble"/>
+      </g>
+      <rect x="340" y="24" width="280" height="166" rx="30" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M390 187 L360 235 L420 187" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="480" y="72" font-size="34" text-anchor="middle" fill="#222">Тут совсем</text>
+      <text x="480" y="118" font-size="34" text-anchor="middle" fill="#222">не страшно…</text>
+      <text x="480" y="164" font-size="34" text-anchor="middle" fill="#222">почти.</text>
+    </svg>
+    <rect x="10" y="470" width="640" height="480" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 11: a rustle -->
+  <g id="b-3" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="460">
+      <rect width="640" height="460" fill="url(#stones)"/>
+      <rect width="640" height="460" fill="#1a0f22" opacity=".35"/>
+      <rect x="380" y="110" width="240" height="14" fill="#7a4a2a" stroke="#222" stroke-width="5"/>
+      <rect x="400" y="60" width="40" height="50" rx="6" fill="#9ccc65" stroke="#222" stroke-width="5"/>
+      <rect x="460" y="70" width="36" height="40" rx="6" fill="#ef9a9a" stroke="#222" stroke-width="5"/>
+      <rect x="520" y="56" width="44" height="54" rx="6" fill="#ffe082" stroke="#222" stroke-width="5"/>
+      <rect y="380" width="640" height="80" fill="#2a1a33"/>
+      <path d="M0 380 L640 380" stroke="#222" stroke-width="5"/>
+      <circle cx="244" cy="315" r="220" fill="url(#glowO)"/>
+      <use href="#barrel" transform="translate(520 395) scale(1.05)"/>
+      <path d="M590 250 q12 -14 24 0 M596 290 q12 -14 24 0" fill="none" stroke="#ffcf70" stroke-width="5"/>
+      <path d="M290 335 L420 335 L405 390 L305 390 Z" fill="#c9a15b" stroke="#222" stroke-width="6"/>
+      <use href="#apple" transform="translate(320 322) scale(1.2)"/>
+      <use href="#apple" transform="translate(356 316) scale(1.2)"/>
+      <use href="#apple" transform="translate(392 322) scale(1.2)"/>
+      <g transform="translate(20 190) scale(.95)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes"/><use href="#tish-smile"/>
+      </g>
+      <text x="510" y="200" font-size="64" text-anchor="middle" fill="#ffcf70" stroke="#222" stroke-width="10" paint-order="stroke" transform="rotate(8 510 200)">ШУРХ!</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="490" width="640" height="460">
+      <rect width="640" height="460" fill="#1f1328"/>
+      <rect width="640" height="460" fill="url(#stones)" opacity=".5"/>
+      <rect y="425" width="640" height="35" fill="#2a1a33"/>
+      <path d="M0 425 L640 425" stroke="#222" stroke-width="5"/>
+      <circle cx="374" cy="318" r="250" fill="url(#glowO)"/>
+      <g transform="translate(20 120) scale(1.5)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes-wide"/><use href="#tish-wobble"/>
+      </g>
+      <path d="M30 190 l-20 -15 M22 250 l-25 0 M70 140 l-12 -20" stroke="#ffcf70" stroke-width="5"/>
+      <use href="#apple" transform="translate(500 405) scale(1.3)"/>
+      <path d="M540 395 l30 0 M540 410 l40 0" stroke="#ffcf70" stroke-width="4"/>
+      <rect x="360" y="24" width="260" height="96" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M400 117 L345 212 L440 117" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="490" y="86" font-size="40" text-anchor="middle" fill="#222">Кто там?!</text>
+    </svg>
+    <rect x="10" y="490" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Pages 12|13: the giant shadow (1320x960) -->
+  <g id="b-45" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="1300" height="940">
+      <rect width="1300" height="940" fill="url(#stones)"/>
+      <rect width="1300" height="940" fill="#1a0f22" opacity=".4"/>
+      <g transform="translate(1010 760) scale(4.6)" color="#1a0d24" opacity=".92">
+        <use href="#mouse-sil"/><use href="#mouse-arms-up"/>
+      </g>
+      <rect y="760" width="1300" height="180" fill="#2a1a33"/>
+      <path d="M0 760 L1300 760" stroke="#222" stroke-width="5"/>
+      <circle cx="1040" cy="700" r="110" fill="url(#glowO)"/>
+      <use href="#barrel" transform="translate(1100 800) scale(.8)"/>
+      <circle cx="474" cy="638" r="330" fill="url(#glowO)"/>
+      <g transform="translate(120 440) scale(1.5)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes-wide"/><use href="#tish-o"/>
+      </g>
+      <path d="M110 500 l-30 -20 M96 580 l-36 0 M150 450 l-16 -28" stroke="#ffcf70" stroke-width="6"/>
+      <text x="320" y="260" font-size="120" text-anchor="middle" fill="#ffcf70" stroke="#222" stroke-width="14" paint-order="stroke" transform="rotate(-6 320 260)">А-А-А!</text>
+    </svg>
+    <rect x="10" y="10" width="1300" height="940" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 14: it's only a mouse -->
+  <g id="b-6" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="440">
+      <rect width="640" height="440" fill="url(#stones)"/>
+      <rect width="640" height="440" fill="#1a0f22" opacity=".35"/>
+      <rect y="400" width="640" height="40" fill="#2a1a33"/>
+      <path d="M0 400 L640 400" stroke="#222" stroke-width="5"/>
+      <circle cx="325" cy="332" r="160" fill="url(#glowO)"/>
+      <g transform="translate(420 405) scale(1.7)">
+        <use href="#mouse"/><use href="#mouse-hold"/>
+        <use href="#mouse-eyes-wide"/><use href="#mouse-o"/>
+      </g>
+      <path d="M560 250 l20 -14 M570 290 l26 0 M556 330 l20 14" stroke="#ffcf70" stroke-width="5"/>
+      <use href="#barrel" transform="translate(240 425) scale(1.3)"/>
+      <rect x="340" y="24" width="290" height="80" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M440 101 L420 188 L470 101" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="485" y="78" font-size="34" text-anchor="middle" fill="#222">Не ешь меня!</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="440" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="470" width="640" height="480">
+      <rect width="640" height="480" fill="url(#stones)"/>
+      <rect width="640" height="480" fill="#1a0f22" opacity=".35"/>
+      <g transform="translate(560 330) scale(1.4)" color="#1a0d24" opacity=".7">
+        <use href="#mouse-sil"/><use href="#mouse-arms-up"/>
+      </g>
+      <rect y="410" width="640" height="70" fill="#2a1a33"/>
+      <path d="M0 410 L640 410" stroke="#222" stroke-width="5"/>
+      <circle cx="438" cy="368" r="130" fill="url(#glowO)"/>
+      <circle cx="280" cy="325" r="200" fill="url(#glowO)"/>
+      <g transform="translate(500 415) scale(1.1)">
+        <use href="#mouse"/><use href="#mouse-hold"/>
+        <use href="#mouse-eyes"/><use href="#mouse-smile"/>
+      </g>
+      <g transform="translate(20 180) scale(1.1)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes-happy"/><use href="#tish-laugh"/>
+      </g>
+      <rect x="24" y="24" width="300" height="120" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M150 141 L200 198 L195 141" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="174" y="74" font-size="34" text-anchor="middle" fill="#222">Так это твоя</text>
+      <text x="174" y="120" font-size="34" text-anchor="middle" fill="#222">тень!</text>
+    </svg>
+    <rect x="10" y="470" width="640" height="480" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 15: afraid together -->
+  <g id="b-7" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="460">
+      <rect width="640" height="460" fill="url(#stones)"/>
+      <rect width="640" height="460" fill="#1a0f22" opacity=".35"/>
+      <rect y="410" width="640" height="50" fill="#2a1a33"/>
+      <path d="M0 410 L640 410" stroke="#222" stroke-width="5"/>
+      <circle cx="232" cy="341" r="170" fill="url(#glowO)"/>
+      <circle cx="427" cy="354" r="120" fill="url(#glowO)"/>
+      <g transform="translate(20 222) scale(.9)">
+        <use href="#tish"/><use href="#tish-candle"/>
+        <use href="#tish-eyes"/><use href="#tish-smile"/>
+      </g>
+      <g transform="translate(500 410) scale(1.3)">
+        <use href="#mouse"/><use href="#mouse-hold"/>
+        <use href="#mouse-eyes"/><use href="#mouse-o"/>
+      </g>
+      <rect x="330" y="20" width="290" height="106" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M470 123 L478 238 L505 123" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="475" y="62" font-size="32" text-anchor="middle" fill="#222">Я тоже боюсь</text>
+      <text x="475" y="104" font-size="32" text-anchor="middle" fill="#222">темноты…</text>
+      <rect x="20" y="120" width="290" height="106" rx="28" fill="#fff" stroke="#222" stroke-width="5"/>
+      <path d="M240 223 L232 288 L280 223" fill="#fff" stroke="#222" stroke-width="5"/>
+      <text x="165" y="162" font-size="32" text-anchor="middle" fill="#222">Давай бояться</text>
+      <text x="165" y="204" font-size="32" text-anchor="middle" fill="#222">вместе?</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+
+    <svg x="10" y="490" width="640" height="460">
+      <rect width="640" height="460" fill="url(#stones)"/>
+      <rect width="640" height="460" fill="#1a0f22" opacity=".35"/>
+      <rect y="400" width="640" height="60" fill="#2a1a33"/>
+      <path d="M0 400 L640 400" stroke="#222" stroke-width="5"/>
+      <circle cx="370" cy="340" r="280" fill="url(#glowO)"/>
+      <use href="#candle" transform="translate(340 408)"/>
+      <use href="#candle" transform="translate(405 412) scale(.8)"/>
+      <g transform="translate(40 200) scale(.95)">
+        <use href="#tish"/><use href="#tish-apple"/>
+        <use href="#tish-eyes-happy"/><use href="#tish-smile"/>
+      </g>
+      <g transform="translate(540 400) scale(1.2)">
+        <use href="#mouse"/><use href="#mouse-apple"/>
+        <use href="#mouse-eyes-happy"/><use href="#mouse-smile"/>
+      </g>
+      <rect x="16" y="16" width="480" height="56" fill="#fff3b0" stroke="#222" stroke-width="5"/>
+      <text x="32" y="54" font-size="30" fill="#222">Вдвоём совсем не страшно!</text>
+    </svg>
+    <rect x="10" y="490" width="640" height="460" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+
+  <!-- Page 16: back cover -->
+  <g id="b-8" font-family="'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive" font-weight="700" stroke-linejoin="round" stroke-linecap="round">
+    <svg x="10" y="10" width="640" height="940">
+      <rect width="640" height="940" fill="url(#stones)"/>
+      <rect width="640" height="940" fill="#1a0f22" opacity=".5"/>
+      <rect y="560" width="640" height="380" fill="#2a1a33"/>
+      <path d="M0 560 L640 560" stroke="#222" stroke-width="5"/>
+      <circle cx="320" cy="290" r="290" fill="url(#glowO)"/>
+      <use href="#barrel" transform="translate(320 560) scale(1.4)"/>
+      <use href="#candle" transform="translate(290 336) scale(.9)"/>
+      <use href="#candle" transform="translate(352 338) scale(.75)"/>
+      <g transform="translate(70 434) scale(.6)">
+        <use href="#tish"/><use href="#tish-eyes-happy"/><use href="#tish-smile"/>
+      </g>
+      <g transform="translate(540 560) scale(.9)">
+        <use href="#mouse"/><use href="#mouse-eyes-happy"/><use href="#mouse-smile"/>
+      </g>
+      <text x="320" y="700" font-size="100" text-anchor="middle" fill="#ffcf70" stroke="#222" stroke-width="12" paint-order="stroke">КОНЕЦ</text>
+      <text x="320" y="770" font-size="28" text-anchor="middle" fill="#fff">FOLDBOOK COMICS · No. 4</text>
+      <text x="320" y="830" font-size="24" text-anchor="middle" fill="#e6d3f0">Переверни лист и сложи заново —</text>
+      <text x="320" y="866" font-size="24" text-anchor="middle" fill="#e6d3f0">там No. 3: «Ёжик и ночь»</text>
+    </svg>
+    <rect x="10" y="10" width="640" height="940" fill="none" stroke="#222" stroke-width="7"/>
+  </g>
+</defs>
+</svg>
+
+<!-- Cell order and page numbers match web/index.html:
+     front A1..D2 = 8 7 1 6 2 5 3 4, back = the same + 8. -->
+<div class="sheet-group front">
+  <div class="sheet-label no-print">Лицевая сторона · No. 3 «Ёжик и ночь» · страницы 1–8</div>
+  <div class="sheet">
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-8"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-7"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-1"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-6"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-2"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="660 0 660 960"><use href="#a-45"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-3"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#a-45"/></svg></div></div>
+  </div>
+</div>
+
+<div class="sheet-group back">
+  <div class="sheet-label no-print">Оборот · No. 4 «Кто там в темноте?» · страницы 9–16</div>
+  <div class="sheet">
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-8"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-7"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-1"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-6"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-2"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="660 0 660 960"><use href="#b-45"/></svg></div></div>
+    <div class="cell col-1"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-3"/></svg></div></div>
+    <div class="cell col-2"><div class="cell-inner"><svg class="page" viewBox="0 0 660 960"><use href="#b-45"/></svg></div></div>
+  </div>
+</div>
+
+</body>
+</html>

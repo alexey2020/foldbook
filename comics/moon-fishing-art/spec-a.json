@@ -1,0 +1,65 @@
+{
+  "outDir": "comics/moon-fishing-art",
+  "style": "Children's comic book panel in exactly the same art style as the reference image: flat colors, thick clean black outlines, simple shapes. The cat is the same character as in the reference: cute orange tabby cat with a white chest and white muzzle. Full-bleed illustration filling the whole image, no border, no frame, no text, no letters, no speech bubbles.",
+  "reference": {
+    "file": "ref-a.jpg",
+    "prompt": "Cute orange tabby cat with a white chest sitting in a small red wooden rowboat on a calm dark blue lake at night, holding a fishing rod, big glowing full moon, stars, no text"
+  },
+  "panels": [
+    {
+      "id": "a-1",
+      "size": "704x1024",
+      "prompt": "Tall portrait composition. Night lake, a huge glowing full moon in the upper middle, stars. The cat sits in a small red wooden rowboat in the lower part of the image, holding a fishing rod whose line goes into the moon's reflection on the water. The top quarter of the image is plain dark night sky, left empty."
+    },
+    {
+      "id": "a-2-top",
+      "size": "1024x704",
+      "prompt": "Wide shot: the cat rows the small red rowboat with an oar across a calm dark blue lake at night, full moon in the upper right corner, stars. The upper left area is plain dark sky, left empty."
+    },
+    {
+      "id": "a-2-bottom",
+      "size": "1024x768",
+      "prompt": "The night sky fills the entire image edge to edge, there is no rectangle, no panel border, no inner frame. Close-up of the cat, happy and confident, eyes closed in a smile, holding a fishing rod over its shoulder, night sky with stars behind. The cat is in the lower right half; the upper left area is plain dark sky, left empty."
+    },
+    {
+      "id": "a-3-top",
+      "size": "1024x736",
+      "prompt": "The cat in the small red rowboat on the left casts the fishing line in a long arc; the hook lands with a small splash in the bright reflection of the moon on the water on the right. Full moon in the sky, stars."
+    },
+    {
+      "id": "a-3-bottom",
+      "size": "1024x736",
+      "prompt": "The cat has fallen asleep in the small red rowboat, eyes closed, smiling, the fishing rod resting against the side of the boat with the line in the water. Night lake, stars. The upper right area is plain dark sky, left empty."
+    },
+    {
+      "id": "a-45",
+      "size": "1408x1024",
+      "prompt": "Very wide dramatic scene. On the left, the cat in the small red rowboat leans back, pulling hard on a strongly bent fishing rod, eyes wide open in shock. On the right, the fishing line is hooked onto a huge glowing full moon that is being pulled up out of the lake with a giant splash of water and flying drops. The sky has no other moon. Dark night sky with stars. The upper right area above the moon is plain dark sky, left empty."
+    },
+    {
+      "id": "a-6-top",
+      "size": "1024x704",
+      "prompt": "Very dark night, the sky is black with no moon. The cat sits in the small red rowboat, eyes closed, happily hugging a big glowing full moon that sits inside the boat and lights up the cat's face. The upper left area is plain dark sky, left empty."
+    },
+    {
+      "id": "a-6-bottom",
+      "size": "1024x768",
+      "prompt": "Underwater view in a very dark lake at night. A blue fish in the center looks up, annoyed, towards the dark bottom of a small red rowboat at the top of the image. A second small fish in the lower right corner. A few bubbles. The upper left area is plain dark water, left empty. (No cat in this panel; keep the same art style.)"
+    },
+    {
+      "id": "a-7-top",
+      "size": "1024x704",
+      "prompt": "No fishing rod in this panel. The cat stands up in the small red rowboat, both front paws stretched straight up above its head, mouth open in a cheer, having just thrown the glowing full moon up into the dark sky; the moon flies up on the right with motion lines. The upper left area is plain dark sky, left empty."
+    },
+    {
+      "id": "a-7-bottom",
+      "size": "1024x768",
+      "prompt": "Calm night lake, the full moon is back high in the sky on the right, with its reflection on the water. The cat sits happily in the small red rowboat holding a fishing rod with one tiny fish dangling from the line. The upper left area is plain night sky, left empty."
+    },
+    {
+      "id": "a-8",
+      "size": "704x1024",
+      "prompt": "Tall portrait composition, calm and quiet. A big full moon in the upper part, stars. Far away on the lake, a tiny red rowboat with the small cat in it, in the moon's reflection. The lower third of the image is plain dark blue water, left empty."
+    }
+  ]
+}
