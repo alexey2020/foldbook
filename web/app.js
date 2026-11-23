@@ -300,9 +300,12 @@
   //
   //   ## 1
   //   text for page 1
-  // Anything before the first recognized heading is ignored.
+  // Anything before the first recognized heading is ignored. If the same
+  // page number appears more than once, the last section wins; the repeated
+  // numbers are listed in result.duplicates so the caller can warn about it.
   function parseMarkdownSections(text) {
     var result = {};
+    var duplicates = [];
     var currentPage = null;
     var buffer = [];
     var headingRe = /^#{1,6}\s+(1[0-6]|[1-9])\s*$/;
@@ -319,17 +322,21 @@
       if (match) {
         flush();
         currentPage = match[1];
+        if (result.hasOwnProperty(currentPage) && duplicates.indexOf(currentPage) === -1) {
+          duplicates.push(currentPage);
+        }
       } else if (currentPage) {
         buffer.push(line);
       }
     });
     flush();
-    return result;
+    return { sections: result, duplicates: duplicates };
   }
 
   function importMdFile(file) {
     readFileAsText(file, function (text) {
-      var sections = parseMarkdownSections(text);
+      var parsed = parseMarkdownSections(text);
+      var sections = parsed.sections;
       if (Object.keys(sections).length === 0) {
         alert(
           'No page headings found. Mark each section with a heading naming ' +
@@ -345,6 +352,14 @@
       });
       renderAllCells();
       refreshStaging();
+      if (parsed.duplicates.length) {
+        alert(
+          "Some page numbers appear more than once: " +
+            parsed.duplicates.map(function (n) { return "## " + n; }).join(", ") +
+            ".\nOnly the last section with each number was used; the earlier " +
+            "ones were dropped. Check the page numbering in the file."
+        );
+      }
     });
   }
 

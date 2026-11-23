@@ -122,6 +122,8 @@ text for page 2
 - All 16 headings are optional; a missing one renders as a blank page (the
   printed page number still shows).
 - Unrecognized headings are ignored with a console warning.
+- If a page number appears more than once, the last section with that
+  number wins, and Import MD shows a warning listing the repeated numbers.
 
 ## Project structure
 
