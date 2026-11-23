@@ -83,6 +83,22 @@ body.hide-page-numbers .cell-label {
   cursor: pointer;
 }
 
+.staging-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staging-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.staging-row label {
+  width: 4em;
+}
+
 /* By default every cell shows its rendered view (bold/italic/lists/dividers
    as real formatting, not raw markdown). Clicking into a cell switches that
    one cell to a plain-text textarea for editing; clicking away renders it
@@ -93,8 +109,11 @@ textarea.cell-content {
   display: none;
 }
 
+/* A flex column, so a preset block (layout.css: .preset) can take whatever
+   height is left below the page's text. */
 .cell-print {
-  display: block;
+  display: flex;
+  flex-direction: column;
   cursor: text;
 }
 
@@ -128,6 +147,6 @@ textarea.cell-content {
   }
 
   .cell-print {
-    display: block !important;
+    display: flex !important;
   }
 }

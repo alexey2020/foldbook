@@ -63,6 +63,27 @@ rendered at print time:
   is split into equal-height rows separated by a dashed line matching the
   main page borders.
 
+### Page presets
+
+Pick a page in the staging box, choose a **Preset** and click **Apply** to
+fill that page with a ready-made layout (it asks first if the page already
+has text). A preset is just one directive line in the page's text, so it is
+saved by Export MD, loaded by Import MD and can be edited by hand:
+
+| Preset | Directive |
+|---|---|
+| Calendar | `{{calendar 2026-11}}` (month as `YYYY-MM`; empty = current month) |
+| Grid, 5mm | `{{grid}}` |
+| Dot grid, 5mm | `{{dots}}` |
+| Lined, 7mm | `{{lines}}` |
+| Checklist | `{{checklist}}` |
+| Wheel of life | `{{wheel Health, Career, Money, ...}}` (3+ comma-separated areas) |
+
+The block fills whatever height is left on the page, so text above it
+(e.g. a `**title**` line) works. Month and weekday names and the first day
+of the week follow the browser's language, as do the wheel's default areas
+(Russian or English).
+
 Anything else is treated as plain text. This applies to the web editor's
 rendered view, Print/Save PDF, and Ctrl+P alike.
 

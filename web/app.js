@@ -84,6 +84,226 @@
     return text;
   }
 
+  // --- Page presets ---
+  //
+  // A preset is a single directive line in the page's markdown, e.g.
+  // "{{grid}}" or "{{calendar 2026-11}}". It renders as a block that fills
+  // whatever height is left on the page below any text above it. Keeping
+  // presets as plain text means they survive Export/Import MD unchanged and
+  // can be edited by hand like the rest of the page.
+
+  var DIRECTIVE_RE = /^\{\{\s*([a-z]+)(?:\s+(.*?))?\s*\}\}$/i;
+
+  // Inline SVG ids are document-global, so every rendered wheel needs its
+  // own ids (16 pages can each hold one).
+  var idSeq = 0;
+
+  function uiLang() {
+    return navigator.language || "en";
+  }
+
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  // Page-sized ruling, drawn as plain vector lines/dots with mm coordinates
+  // (SVG x/y/r accept units). Deliberately not an SVG <pattern>: Chrome
+  // rasterizes pattern fills when printing, so they come out blurry in the
+  // PDF. The marks cover the largest possible page (75 x 105mm) and the
+  // SVG clips whatever doesn't fit.
+  var RULE_COLOR = "#a8a8a8";
+
+  function rulingSvg(inner) {
+    return '<svg class="preset-svg" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">' + inner + "</svg>";
+  }
+
+  function hLine(yMm) {
+    return '<line x1="0" x2="100%" y1="' + yMm + 'mm" y2="' + yMm + 'mm"/>';
+  }
+
+  function vLine(xMm) {
+    return '<line y1="0" y2="100%" x1="' + xMm + 'mm" x2="' + xMm + 'mm"/>';
+  }
+
+  function presetBlock(kind, inner) {
+    return '<div class="preset preset-' + kind + '">' + inner + "</div>";
+  }
+
+  // "YYYY-MM" -> {year, month(0-11)}; anything else -> the current month.
+  function parseMonth(arg) {
+    var m = /^(\d{4})-(\d{1,2})$/.exec(arg || "");
+    if (m && +m[2] >= 1 && +m[2] <= 12) return { year: +m[1], month: +m[2] - 1 };
+    var now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  }
+
+  // 1 = Monday ... 7 = Sunday, from the browser's locale where supported.
+  function firstDayOfWeek(lang) {
+    try {
+      var loc = new Intl.Locale(lang);
+      var info = loc.getWeekInfo ? loc.getWeekInfo() : loc.weekInfo;
+      if (info && info.firstDay) return info.firstDay;
+    } catch (e) {}
+    return 1;
+  }
+
+  function renderCalendar(arg) {
+    var lang = uiLang();
+    var ym = parseMonth(arg);
+    var first = new Date(ym.year, ym.month, 1);
+    var daysInMonth = new Date(ym.year, ym.month + 1, 0).getDate();
+    var monthName = new Intl.DateTimeFormat(lang, { month: "long" }).format(first);
+    var title = monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + ym.year;
+
+    var startDay = firstDayOfWeek(lang) % 7; // JS getDay(): 0 = Sunday
+    var weekdayFmt = new Intl.DateTimeFormat(lang, { weekday: "short" });
+    var head = "";
+    for (var i = 0; i < 7; i++) {
+      // 2023-01-01 was a Sunday, so day (1 + n) has getDay() === n.
+      var wd = (startDay + i) % 7;
+      var weekend = wd === 0 || wd === 6 ? " cal-weekend" : "";
+      head += '<div class="cal-head' + weekend + '">' + escapeHtml(weekdayFmt.format(new Date(2023, 0, 1 + wd))) + "</div>";
+    }
+
+    var lead = (first.getDay() - startDay + 7) % 7;
+    var total = Math.ceil((lead + daysInMonth) / 7) * 7;
+    var cells = "";
+    for (var c = 0; c < total; c++) {
+      var day = c - lead + 1;
+      var dow = (startDay + c) % 7;
+      var cls = "cal-day" + (dow === 0 || dow === 6 ? " cal-weekend" : "");
+      cells += day >= 1 && day <= daysInMonth
+        ? '<div class="' + cls + '">' + day + "</div>"
+        : '<div class="' + cls + ' cal-empty"></div>';
+    }
+    return presetBlock(
+      "calendar",
+      '<div class="cal-title">' + escapeHtml(title) + "</div>" +
+        '<div class="cal-grid" style="grid-template-rows:auto repeat(' + total / 7 + ',1fr)">' + head + cells + "</div>"
+    );
+  }
+
+  function renderGrid() {
+    var lines = "";
+    for (var y = 0; y <= 105; y += 5) lines += hLine(y + 0.1);
+    for (var x = 0; x <= 75; x += 5) lines += vLine(x + 0.1);
+    return presetBlock("grid", rulingSvg('<g stroke="' + RULE_COLOR + '" stroke-width="0.2mm">' + lines + "</g>"));
+  }
+
+  function renderDots() {
+    var dots = "";
+    for (var y = 2.5; y < 105; y += 5) {
+      for (var x = 2.5; x < 75; x += 5) dots += '<circle cx="' + x + 'mm" cy="' + y + 'mm" r="0.3mm"/>';
+    }
+    return presetBlock("dots", rulingSvg('<g fill="#8a8a8a">' + dots + "</g>"));
+  }
+
+  function renderLines() {
+    var lines = "";
+    for (var y = 7; y <= 105; y += 7) lines += hLine(y - 0.1);
+    return presetBlock("lines", rulingSvg('<g stroke="' + RULE_COLOR + '" stroke-width="0.2mm">' + lines + "</g>"));
+  }
+
+  // Rows sit in a grid of fixed-height tracks: repeat(auto-fill, ...) makes
+  // only as many tracks as fit whole, and surplus rows land in 0-height
+  // implicit tracks and are clipped — so the page never ends on half a box.
+  function renderChecklist() {
+    var rows = "";
+    for (var i = 0; i < 30; i++) {
+      rows += '<div class="check-row"><div class="check-line"><span class="check-box"></span></div></div>';
+    }
+    return presetBlock("checklist", rows);
+  }
+
+  var WHEEL_LABELS = {
+    ru: ["Здоровье", "Карьера", "Финансы", "Отношения", "Семья", "Друзья", "Развитие", "Отдых"],
+    en: ["Health", "Career", "Money", "Love", "Family", "Friends", "Growth", "Fun"],
+  };
+
+  function defaultWheelLabels() {
+    return WHEEL_LABELS[uiLang().slice(0, 2).toLowerCase()] || WHEEL_LABELS.en;
+  }
+
+  // A wheel of life: one sector per label, 10 concentric rings to shade in
+  // a 1-10 score per area. Labels are a comma-separated directive argument.
+  function renderWheel(arg) {
+    var labels = (arg || "")
+      .split(",")
+      .map(function (s) {
+        return s.trim();
+      })
+      .filter(Boolean);
+    if (labels.length < 3) labels = defaultWheelLabels();
+    var R = 80;
+    var n = labels.length;
+    var wheelId = "fb-wheel-" + ++idSeq;
+    var svg = "";
+    for (var ring = 1; ring <= 10; ring++) {
+      var outer = ring === 10;
+      svg += '<circle r="' + (R * ring) / 10 + '" fill="none" stroke="' + (outer ? "#555" : "#c8c8c8") +
+        '" stroke-width="' + (outer ? 1.2 : 0.6) + '"/>';
+    }
+    for (var i = 0; i < n; i++) {
+      // Sector boundaries start at 12 o'clock; labels sit mid-sector.
+      var a = (2 * Math.PI * i) / n - Math.PI / 2;
+      svg += '<line x1="0" y1="0" x2="' + (R * Math.cos(a)).toFixed(2) + '" y2="' + (R * Math.sin(a)).toFixed(2) +
+        '" stroke="#555" stroke-width="0.8"/>';
+      // Each label follows an arc just outside its sector. Upper-half arcs
+      // run clockwise with the baseline on the arc; lower-half arcs run
+      // counter-clockwise (so the text still reads left to right, upright)
+      // on a larger radius, since there the glyphs hang toward the centre.
+      var a0 = a + 0.04;
+      var a1 = a + (2 * Math.PI) / n - 0.04;
+      var lower = Math.sin(a + Math.PI / n) > 0;
+      var r = lower ? R + 11 : R + 3;
+      var from = lower ? a1 : a0;
+      var to = lower ? a0 : a1;
+      var pid = wheelId + "-" + i;
+      svg += '<path id="' + pid + '" fill="none" d="M' + (r * Math.cos(from)).toFixed(2) + " " + (r * Math.sin(from)).toFixed(2) +
+        "A" + r + " " + r + " 0 0 " + (lower ? 0 : 1) + " " + (r * Math.cos(to)).toFixed(2) + " " + (r * Math.sin(to)).toFixed(2) + '"/>';
+      svg += '<text text-anchor="middle"><textPath href="#' + pid + '" startOffset="50%">' + escapeHtml(labels[i]) +
+        "</textPath></text>";
+    }
+    var half = R + 14;
+    return presetBlock(
+      "wheel",
+      '<svg class="preset-svg" xmlns="http://www.w3.org/2000/svg" viewBox="' + -half + " " + -half + " " + 2 * half + " " + 2 * half +
+        '" preserveAspectRatio="xMidYMid meet">' + svg + "</svg>"
+    );
+  }
+
+  var DIRECTIVES = {
+    calendar: renderCalendar,
+    grid: renderGrid,
+    dots: renderDots,
+    lines: renderLines,
+    checklist: renderChecklist,
+    wheel: renderWheel,
+  };
+
+  // The text a preset puts on a page (what "Apply preset" inserts).
+  var PRESETS = {
+    calendar: function () {
+      var now = new Date();
+      return "{{calendar " + now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "}}";
+    },
+    grid: function () {
+      return "{{grid}}";
+    },
+    dots: function () {
+      return "{{dots}}";
+    },
+    lines: function () {
+      return "{{lines}}";
+    },
+    checklist: function () {
+      return "{{checklist}}";
+    },
+    wheel: function () {
+      return "{{wheel " + defaultWheelLabels().join(", ") + "}}";
+    },
+  };
+
   // Paragraphs and lists only (no dividers).
   function renderBlocks(text) {
     var lines = text.split(/\r\n|\r|\n/);
@@ -119,6 +339,13 @@
 
     lines.forEach(function (raw) {
       var line = raw.replace(/\s+$/, "");
+      var directive = DIRECTIVE_RE.exec(line.trim());
+      if (directive && DIRECTIVES[directive[1].toLowerCase()]) {
+        flushList();
+        flushPara();
+        htmlParts.push(DIRECTIVES[directive[1].toLowerCase()](directive[2] || ""));
+        return;
+      }
       var ulMatch = /^[-*]\s+(.*)$/.exec(line);
       var olMatch = /^\d+\.\s+(.*)$/.exec(line);
       if (ulMatch) {
@@ -246,6 +473,19 @@
     var slot = stagingSlot();
     cellEl(slot.side, slot.name).value = stagingTextEl().value;
     renderCell(slot.side, slot.name);
+  }
+
+  // Replaces the staging-selected page's text with the chosen preset.
+  function applyPresetToCell() {
+    var key = document.getElementById("preset-select").value;
+    if (!PRESETS[key]) return;
+    var slot = stagingSlot();
+    var el = cellEl(slot.side, slot.name);
+    var pageLabel = stagingCellEl().selectedOptions[0].text;
+    if (el.value.trim() && !confirm("Replace the current text on " + pageLabel + " with this preset?")) return;
+    el.value = PRESETS[key]();
+    renderCell(slot.side, slot.name);
+    refreshStaging();
   }
 
   // Mirrors Import MD's heading convention ("## 1") so a round trip through
@@ -427,6 +667,7 @@
       applyStagingToCell();
       refreshStaging();
     });
+    document.getElementById("btn-preset-apply").addEventListener("click", applyPresetToCell);
 
     loadDemo();
   }

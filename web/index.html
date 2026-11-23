@@ -22,25 +22,41 @@
   </div>
 
   <div class="staging no-print">
-    <label for="staging-cell">Page:</label>
-    <select id="staging-cell">
-      <option value="front:B1">Page 1</option>
-      <option value="front:C1">Page 2</option>
-      <option value="front:D1">Page 3</option>
-      <option value="front:D2">Page 4</option>
-      <option value="front:C2">Page 5</option>
-      <option value="front:B2">Page 6</option>
-      <option value="front:A2">Page 7</option>
-      <option value="front:A1">Page 8</option>
-      <option value="back:B1">Page 9 (back)</option>
-      <option value="back:C1">Page 10 (back)</option>
-      <option value="back:D1">Page 11 (back)</option>
-      <option value="back:D2">Page 12 (back)</option>
-      <option value="back:C2">Page 13 (back)</option>
-      <option value="back:B2">Page 14 (back)</option>
-      <option value="back:A2">Page 15 (back)</option>
-      <option value="back:A1">Page 16 (back)</option>
-    </select>
+    <div class="staging-controls">
+      <div class="staging-row">
+        <label for="staging-cell">Page:</label>
+        <select id="staging-cell">
+          <option value="front:B1">Page 1</option>
+          <option value="front:C1">Page 2</option>
+          <option value="front:D1">Page 3</option>
+          <option value="front:D2">Page 4</option>
+          <option value="front:C2">Page 5</option>
+          <option value="front:B2">Page 6</option>
+          <option value="front:A2">Page 7</option>
+          <option value="front:A1">Page 8</option>
+          <option value="back:B1">Page 9 (back)</option>
+          <option value="back:C1">Page 10 (back)</option>
+          <option value="back:D1">Page 11 (back)</option>
+          <option value="back:D2">Page 12 (back)</option>
+          <option value="back:C2">Page 13 (back)</option>
+          <option value="back:B2">Page 14 (back)</option>
+          <option value="back:A2">Page 15 (back)</option>
+          <option value="back:A1">Page 16 (back)</option>
+        </select>
+      </div>
+      <div class="staging-row">
+        <label for="preset-select">Preset:</label>
+        <select id="preset-select">
+          <option value="calendar">Calendar (this month)</option>
+          <option value="grid">Grid</option>
+          <option value="dots">Dot grid</option>
+          <option value="lines">Lined</option>
+          <option value="checklist">Checklist</option>
+          <option value="wheel">Wheel of life</option>
+        </select>
+        <button id="btn-preset-apply" type="button">Apply</button>
+      </div>
+    </div>
     <textarea id="staging-text" rows="4" placeholder="Comfortable text input without rotation — pick a page and click Insert"></textarea>
     <button id="btn-staging-apply" type="button">Insert into page</button>
   </div>
