@@ -46,6 +46,13 @@ body {
   height: 74.25mm;
   overflow: hidden;
   border: 0.2mm dashed #999;
+  /* Print fix: .cell-inner is laid out unrotated (74.25 x 105mm) and only
+     then rotated, so in the bottom row (D) its untransformed box sticks
+     ~15mm past the bottom of the A4 page. Chrome's print fragmentation works
+     on that untransformed box and splits it at the page edge, so long text on
+     pages 3/4 (11/12) came out shifted, clipped and overlapping in the PDF.
+     Containment makes each cell monolithic, so nothing inside gets split. */
+  contain: strict;
 }
 
 /* The sheet is folded along every grid line except one: a physical cut runs
