@@ -268,3 +268,93 @@ body {
   font-size: 10px;
   fill: #222;
 }
+
+/* 100 hours / 100 days tracker: Start/End fields, then a 10 x 10 grid (one
+   cell per hour or day) to shade in with a pencil. The SVG uses ~mm
+   viewBox units. */
+.cell-content .preset-tracker {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-content .tracker-title {
+  flex: 0 0 auto;
+  font-weight: bold;
+  font-size: 3.4mm;
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+.cell-content .tracker-fields {
+  flex: 0 0 auto;
+  margin-bottom: 3mm;
+  font-size: 2.9mm;
+  line-height: 1.6;
+}
+
+.cell-content .tracker-field {
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+}
+
+.cell-content .tracker-label {
+  width: 13mm;
+  color: #666;
+}
+
+.cell-content .tracker-value {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-content .tracker-blank {
+  flex: 1 1 auto;
+  height: 4.5mm;
+  border-bottom: 0.2mm solid #888;
+}
+
+.cell-content .tracker-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.cell-content .tracker-cells {
+  fill: none;
+  stroke: #8a8a8a;
+  stroke-width: 0.2;
+}
+
+.cell-content .tracker-cells .tracker-mark-outline {
+  stroke: #222;
+  stroke-width: 0.45;
+}
+
+.cell-content .tracker-mark-line {
+  stroke: #222;
+  stroke-width: 0.7;
+}
+
+/* Hints are pale enough to disappear under pencil shading. */
+.cell-content .tracker-hint {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.7px;
+  fill: #a8a8a8;
+  text-anchor: middle;
+}
+
+.cell-content .tracker-hint-tight {
+  font-size: 1.35px;
+}
+
+.cell-content .tracker-mark {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.5px;
+  font-weight: bold;
+  fill: #555;
+}
+
+.cell-content .tracker-mark-mid {
+  text-anchor: middle;
+}

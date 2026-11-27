@@ -78,11 +78,34 @@ saved by Export MD, loaded by Import MD and can be edited by hand:
 | Lined, 7mm | `{{lines}}` |
 | Checklist | `{{checklist}}` |
 | Wheel of life | `{{wheel Health, Career, Money, ...}}` (3+ comma-separated areas) |
+| 100 hours | `{{hours 2026-11-25 14:30 squares marks hints}}` |
+| 100 days | `{{days 2026-11-25 circles marks}}` |
 
 The block fills whatever height is left on the page, so text above it
 (e.g. a `**title**` line) works. Month and weekday names and the first day
 of the week follow the browser's language, as do the wheel's default areas
 (Russian or English).
+
+**100 hours / 100 days** prints a "100 hours challenge" / "100 days
+challenge" title, Start and End and a 10 × 10 grid, one cell
+per hour or day, to shade in with a pencil as you go. In the editor pick
+**100 hours / days**, then the unit, the cell shape and the start. The
+words after `hours` / `days` can go in any order:
+
+- a date (and for hours a time): the start. Leave it out to print blank
+  Start/End lines to fill in by hand.
+- `squares` (default) or `circles`: the cell shape.
+- `marks`: for hours, the cell in which each midnight falls gets a dark
+  edge and the new day's date; for days, each 1st of the month gets the
+  month's short name.
+- `hints`: a pale hint in every cell saying when to shade it in. For
+  hours it's the time that hour ends, in two rows (start 10:23 gives
+  11/23, 12/23, ...); for days it's the day itself (start the 25th gives
+  25, 26, ...). Either way the 100th cell's hint equals End.
+
+For hours, End is the start plus 100 real hours, so if the clocks change
+in between, the wall-clock End moves by an hour. For days, the start date
+is day 1 and End is day 100 (start + 99 days).
 
 Anything else is treated as plain text. This applies to the web editor's
 rendered view, Print/Save PDF, and Ctrl+P alike.

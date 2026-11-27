@@ -272,7 +272,192 @@
     );
   }
 
+  // --- 100 hours / 100 days tracker ---
+  //
+  // {{hours 2026-11-25 14:30 squares marks hints}}
+  // {{days 2026-11-25 circles marks}}
+  // Words after the name go in any order:
+  //   date [+ time]      the start (days ignore the time); without a date
+  //                      the Start/End fields print blank, to fill by hand
+  //   squares | circles  cell shape (default squares)
+  //   marks              hours: mark the cell each midnight falls in, with
+  //                      the new day's date; days: mark each 1st of the
+  //                      month, with the month's short name
+  //   hints              in every cell, the moment to shade it in: for
+  //                      hours the time that hour ends (15:30, 16:30, ...),
+  //                      for days the day itself (25, 26, ...)
+  // hours: End = start + 100 real hours (so across a DST change the
+  //        wall-clock end shifts by an hour, which is correct).
+  // days:  day 1 is the start date, End is day 100 (start + 99 days).
+  // Either way the 100th cell's hint is the End.
+
+  var TRACKER_TEXT = {
+    ru: { start: "Начало", end: "Конец" },
+    en: { start: "Start", end: "End" },
+  };
+
+  function trackerText() {
+    return TRACKER_TEXT[uiLang().slice(0, 2).toLowerCase()] || TRACKER_TEXT.en;
+  }
+
+  function parseTrackerArgs(arg) {
+    var opts = { start: null, shape: "squares", marks: false, hints: false };
+    var date = null;
+    var time = [0, 0];
+    (arg || "").split(/\s+/).forEach(function (tok) {
+      var d = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(tok);
+      var t = /^(\d{1,2}):(\d{2})$/.exec(tok);
+      var word = tok.toLowerCase();
+      if (d) date = [+d[1], +d[2] - 1, +d[3]];
+      else if (t) time = [+t[1], +t[2]];
+      else if (word === "circles" || word === "squares") opts.shape = word;
+      else if (word === "marks") opts.marks = true;
+      else if (word === "hints") opts.hints = true;
+    });
+    if (date) {
+      var start = new Date(date[0], date[1], date[2], time[0], time[1]);
+      if (!isNaN(start.getTime())) opts.start = start;
+    }
+    return opts;
+  }
+
+  function formatDate(d) {
+    var wd = new Intl.DateTimeFormat(uiLang(), { weekday: "short" }).format(d);
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " (" + wd + ")";
+  }
+
+  function formatDateTime(d) {
+    var wd = new Intl.DateTimeFormat(uiLang(), { weekday: "short" }).format(d);
+    return (
+      d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
+      " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + " (" + wd + ")"
+    );
+  }
+
+  // What differs between the two trackers: the start, the end, the format,
+  // each cell's hint (lines of text) and which cells get a mark (returns
+  // the mark's label, or null).
+  var TRACKER_UNITS = {
+    hours: {
+      start: function (s) {
+        return s;
+      },
+      end: function (s) {
+        return new Date(s.getTime() + 100 * 3600e3);
+      },
+      format: formatDateTime,
+      // The time cell i's hour is done, as two rows: "11" over "23".
+      hint: function (s, i) {
+        var t = new Date(s.getTime() + (i + 1) * 3600e3);
+        return [pad2(t.getHours()), pad2(t.getMinutes())];
+      },
+      // Cell i covers [start + i h, start + (i+1) h): the midnight in it.
+      mark: function (s, i) {
+        var from = new Date(s.getTime() + i * 3600e3);
+        var to = new Date(s.getTime() + (i + 1) * 3600e3);
+        var m = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+        if (m < from) m = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1);
+        return m < to ? String(m.getDate()) : null;
+      },
+    },
+    days: {
+      start: function (s) {
+        return new Date(s.getFullYear(), s.getMonth(), s.getDate());
+      },
+      end: function (s) {
+        return new Date(s.getFullYear(), s.getMonth(), s.getDate() + 99);
+      },
+      format: formatDate,
+      // Cell i is day start + i: its day of the month.
+      hint: function (s, i) {
+        return [String(new Date(s.getFullYear(), s.getMonth(), s.getDate() + i).getDate())];
+      },
+      // Cell i is day start + i: marked when it's the 1st of a month.
+      mark: function (s, i) {
+        var d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + i);
+        if (d.getDate() !== 1) return null;
+        return new Intl.DateTimeFormat(uiLang(), { month: "short" }).format(d).replace(/\.$/, "");
+      },
+    },
+  };
+
+  function textAt(cls, x, y, text) {
+    return '<text class="' + cls + '" x="' + x + '" y="' + y + '">' + escapeHtml(text) + "</text>";
+  }
+
+  function renderTracker(unitName, arg) {
+    var unit = TRACKER_UNITS[unitName];
+    var o = parseTrackerArgs(arg);
+    var txt = trackerText();
+    var start = o.start ? unit.start(o.start) : null;
+    var end = start ? unit.end(start) : null;
+
+    function field(label, date) {
+      return (
+        '<div class="tracker-field"><span class="tracker-label">' + escapeHtml(label) + "</span>" +
+        (date
+          ? '<span class="tracker-value">' + escapeHtml(unit.format(date)) + "</span>"
+          : '<span class="tracker-blank"></span>') +
+        "</div>"
+      );
+    }
+
+    // Drawn in ~mm viewBox units: 10 x 10 cells of 6.
+    var S = 6;
+    var circles = o.shape === "circles";
+    var cells = "";
+    var marks = "";
+    for (var i = 0; i < 100; i++) {
+      var x = (i % 10) * S;
+      var y = Math.floor(i / 10) * S;
+      var mark = o.marks && start ? unit.mark(start, i) : null;
+      if (circles) {
+        cells += '<circle cx="' + (x + S / 2) + '" cy="' + (y + S / 2) + '" r="2.45"' +
+          (mark ? ' class="tracker-mark-outline"' : "") + "/>";
+      } else {
+        cells += '<rect x="' + x + '" y="' + y + '" width="' + S + '" height="' + S + '"/>';
+        if (mark) {
+          marks += '<line class="tracker-mark-line" x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (y + S) + '"/>';
+        }
+      }
+      var hint = o.hints && start ? unit.hint(start, i) : null;
+      var cx = x + S / 2;
+      if (hint && mark && circles) {
+        // No room for a corner label in a circle: the mark takes the top
+        // row and the hint squeezes into one row below it.
+        marks += textAt("tracker-mark tracker-mark-mid", cx, y + 2.8, mark);
+        marks += textAt("tracker-hint tracker-hint-tight", cx, y + 4.5, hint.join(":"));
+      } else {
+        if (hint) {
+          // Squares sit a bit lower, clear of the corner mark label.
+          var base = circles ? 0 : 0.25;
+          var rows = hint.length === 2 ? [y + 2.75 + base, y + 4.45 + base] : [y + 3.6 + base];
+          for (var r = 0; r < hint.length; r++) marks += textAt("tracker-hint", cx, rows[r], hint[r]);
+        }
+        if (mark) {
+          marks += circles
+            ? textAt("tracker-mark tracker-mark-mid", cx, y + S / 2 + 0.5, mark)
+            : textAt("tracker-mark", x + 0.7, y + 1.7, mark);
+        }
+      }
+    }
+
+    return presetBlock(
+      "tracker",
+      '<div class="tracker-title">100 ' + unitName + " challenge</div>" +
+        '<div class="tracker-fields">' + field(txt.start, start) + field(txt.end, end) + "</div>" +
+        '<svg class="tracker-grid" xmlns="http://www.w3.org/2000/svg" viewBox="-0.3 -0.3 60.6 60.6"' +
+        ' preserveAspectRatio="xMidYMin meet"><g class="tracker-cells">' + cells + "</g>" + marks + "</svg>"
+    );
+  }
+
   var DIRECTIVES = {
+    hours: function (arg) {
+      return renderTracker("hours", arg);
+    },
+    days: function (arg) {
+      return renderTracker("days", arg);
+    },
     calendar: renderCalendar,
     grid: renderGrid,
     dots: renderDots,
@@ -302,7 +487,43 @@
     wheel: function () {
       return "{{wheel " + defaultWheelLabels().join(", ") + "}}";
     },
+    tracker: trackerDirective,
   };
+
+  // Builds {{hours ...}} / {{days ...}} from the editor's tracker options.
+  function trackerDirective() {
+    var unit = document.getElementById("tracker-unit").value;
+    var parts = [unit];
+    if (unit === "hours") {
+      var dt = document.getElementById("tracker-start-time").value; // "YYYY-MM-DDTHH:MM" or ""
+      if (dt) parts.push(dt.slice(0, 10), dt.slice(11, 16));
+    } else {
+      var d = document.getElementById("tracker-start-date").value; // "YYYY-MM-DD" or ""
+      if (d) parts.push(d);
+    }
+    parts.push(document.getElementById("tracker-shape").value);
+    if (document.getElementById("tracker-marks").checked) parts.push("marks");
+    if (document.getElementById("tracker-hints").checked) parts.push("hints");
+    return "{{" + parts.join(" ") + "}}";
+  }
+
+  // The tracker options row is shown only while the tracker preset is
+  // picked. Hours take a date and time, days just a date; both default to
+  // now until the user edits them (clearing one gives blank fields).
+  function syncPresetOptions() {
+    var isTracker = document.getElementById("preset-select").value === "tracker";
+    document.getElementById("tracker-options").hidden = !isTracker;
+    var hours = document.getElementById("tracker-unit").value === "hours";
+    var timeInput = document.getElementById("tracker-start-time");
+    var dateInput = document.getElementById("tracker-start-date");
+    timeInput.hidden = !hours;
+    dateInput.hidden = hours;
+    document.getElementById("tracker-marks-text").textContent = hours ? "Day marks" : "Month marks";
+    var now = new Date();
+    var today = now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
+    if (!timeInput.dataset.touched) timeInput.value = today + "T" + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
+    if (!dateInput.dataset.touched) dateInput.value = today;
+  }
 
   // Paragraphs and lists only (no dividers).
   function renderBlocks(text) {
@@ -668,6 +889,14 @@
       refreshStaging();
     });
     document.getElementById("btn-preset-apply").addEventListener("click", applyPresetToCell);
+    document.getElementById("preset-select").addEventListener("change", syncPresetOptions);
+    document.getElementById("tracker-unit").addEventListener("change", syncPresetOptions);
+    ["tracker-start-time", "tracker-start-date"].forEach(function (id) {
+      document.getElementById(id).addEventListener("input", function (e) {
+        e.target.dataset.touched = "1";
+      });
+    });
+    syncPresetOptions();
 
     loadDemo();
   }

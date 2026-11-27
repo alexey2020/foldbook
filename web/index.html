@@ -53,8 +53,24 @@
           <option value="lines">Lined</option>
           <option value="checklist">Checklist</option>
           <option value="wheel">Wheel of life</option>
+          <option value="tracker">100 hours / days</option>
         </select>
         <button id="btn-preset-apply" type="button">Apply</button>
+      </div>
+      <div class="staging-row" id="tracker-options" hidden>
+        <label for="tracker-unit">Track:</label>
+        <select id="tracker-unit">
+          <option value="hours">100 hours</option>
+          <option value="days">100 days</option>
+        </select>
+        <select id="tracker-shape" aria-label="Cell shape">
+          <option value="squares">Squares</option>
+          <option value="circles">Circles</option>
+        </select>
+        <input id="tracker-start-time" type="datetime-local" aria-label="Start" title="Start. Clear it to print blank Start/End fields to fill in by hand">
+        <input id="tracker-start-date" type="date" aria-label="Start" title="Start (day 1). Clear it to print blank Start/End fields to fill in by hand" hidden>
+        <label class="checkbox-label"><input id="tracker-marks" type="checkbox" checked> <span id="tracker-marks-text">Day marks</span></label>
+        <label class="checkbox-label"><input id="tracker-hints" type="checkbox" checked> Hints</label>
       </div>
     </div>
     <textarea id="staging-text" rows="4" placeholder="Comfortable text input without rotation — pick a page and click Insert"></textarea>

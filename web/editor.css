@@ -150,3 +150,11 @@ textarea.cell-content {
     display: flex !important;
   }
 }
+
+.staging-row[hidden] {
+  display: none;
+}
+
+.staging-row label.checkbox-label {
+  width: auto;
+}
