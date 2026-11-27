@@ -164,6 +164,11 @@ body {
   height: 1.5em;
   text-align: left;
   vertical-align: top;
+  /* The page sets overflow-wrap:anywhere, which also lets the table
+     algorithm squeeze a column down to one letter ("Na|me"). break-word
+     wraps between words first and splits a word only if it alone is
+     wider than the page. */
+  overflow-wrap: break-word;
 }
 
 .cell-content .md-table th {
