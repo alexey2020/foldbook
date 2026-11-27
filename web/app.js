@@ -54,7 +54,20 @@
     return document.getElementById("cell-" + side + "-" + name);
   }
 
+  // Pictures added to the booklet, "img-1" -> data URL. Page text refers to
+  // them as "![caption][img-1]" so the text stays short and readable; Export
+  // MD appends them as markdown reference definitions ("[img-1]: data:...").
+  var images = {};
+
+  function addImage(dataUrl) {
+    var n = 1;
+    while (images["img-" + n]) n++;
+    images["img-" + n] = dataUrl;
+    return "img-" + n;
+  }
+
   function loadDemo() {
+    images = {};
     SLOTS.forEach(function (slot) {
       var page = String(PAGE_NUMBERS[slot.side][slot.name]);
       cellEl(slot.side, slot.name).value = DEMO_CONTENT[page] || "";
@@ -64,6 +77,7 @@
   }
 
   function clearAll() {
+    images = {};
     SLOTS.forEach(function (slot) {
       cellEl(slot.side, slot.name).value = "";
     });
@@ -77,8 +91,19 @@
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
+  // {red}text{/red}: colored text within one line. Repeated so a color can
+  // sit inside another one ({red}a {blue}b{/blue} c{/red}).
+  var COLORS = ["red", "orange", "yellow", "green", "blue", "purple", "pink", "gray"];
+  var COLOR_RE = new RegExp("\\{(" + COLORS.join("|") + ")\\}(.+?)\\{\\/\\1\\}", "g");
+
   function inlineMd(escaped) {
-    var text = escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    var text = escaped;
+    var prev;
+    do {
+      prev = text;
+      text = text.replace(COLOR_RE, '<span class="ink-$1">$2</span>');
+    } while (text !== prev);
+    text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
     text = text.replace(/_(.+?)_/g, "<em>$1</em>");
     return text;
@@ -525,13 +550,88 @@
     if (!dateInput.dataset.touched) dateInput.value = today;
   }
 
-  // Paragraphs and lists only (no dividers).
+  // --- Tables: markdown pipe tables ---
+  //
+  //   | Name | Qty |      <- header row, if the next line is a separator
+  //   |:-----|----:|      <- optional; colons set the column alignment
+  //   | Tea  | 2   |
+  //
+  // Without a separator line every row is a plain body row.
+
+  var TABLE_SEP_RE = /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$/;
+
+  function splitTableRow(line) {
+    return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(function (c) {
+      return c.trim();
+    });
+  }
+
+  function renderTable(lines) {
+    var header = null;
+    var aligns = [];
+    var body = lines.map(splitTableRow);
+    if (lines.length > 1 && TABLE_SEP_RE.test(lines[1].trim())) {
+      header = body[0];
+      aligns = body[1].map(function (c) {
+        var left = c.charAt(0) === ":";
+        var right = c.charAt(c.length - 1) === ":";
+        return left && right ? "center" : right ? "right" : left ? "left" : "";
+      });
+      body = body.slice(2);
+    }
+    var cols = Math.max.apply(null, [header ? header.length : 0].concat(body.map(function (r) {
+      return r.length;
+    })));
+    function row(cells, tag) {
+      var html = "";
+      for (var i = 0; i < cols; i++) {
+        var style = aligns[i] ? ' style="text-align:' + aligns[i] + '"' : "";
+        html += "<" + tag + style + ">" + inlineMd(escapeHtml(cells[i] || "")) + "</" + tag + ">";
+      }
+      return "<tr>" + html + "</tr>";
+    }
+    return (
+      '<table class="md-table">' +
+      (header ? "<thead>" + row(header, "th") + "</thead>" : "") +
+      "<tbody>" + body.map(function (r) {
+        return row(r, "td");
+      }).join("") + "</tbody></table>"
+    );
+  }
+
+  // --- Images: a line of its own holding "![caption][img-1]" (a picture
+  // added to the booklet) or "![caption](https://...)" (a web address). ---
+
+  var IMAGE_LINE_RE = /^!\[([^\]]*)\](?:\[([^\]]+)\]|\(([^)\s]+)\))$/;
+
+  function imageSrc(ref) {
+    if (images[ref]) return images[ref];
+    if (/^(https?:\/\/|data:image\/)/i.test(ref)) return ref;
+    return null;
+  }
+
+  function renderImage(match) {
+    var src = imageSrc(match[2] || match[3]);
+    if (!src) return null;
+    var alt = escapeHtml(match[1]).replace(/"/g, "&quot;");
+    return '<img class="md-img" src="' + escapeHtml(src).replace(/"/g, "&quot;") + '" alt="' + alt + '">';
+  }
+
+  // Paragraphs, lists, tables, images and presets (no dividers).
   function renderBlocks(text) {
     var lines = text.split(/\r\n|\r|\n/);
     var htmlParts = [];
     var paraBuffer = [];
     var listBuffer = [];
     var listType = null;
+    var tableBuffer = [];
+
+    function flushTable() {
+      if (tableBuffer.length) {
+        htmlParts.push(renderTable(tableBuffer));
+        tableBuffer = [];
+      }
+    }
 
     function flushPara() {
       if (paraBuffer.length) {
@@ -561,10 +661,25 @@
     lines.forEach(function (raw) {
       var line = raw.replace(/\s+$/, "");
       var directive = DIRECTIVE_RE.exec(line.trim());
+      if (/^\s*\|/.test(line)) {
+        flushList();
+        flushPara();
+        tableBuffer.push(line);
+        return;
+      }
+      flushTable();
       if (directive && DIRECTIVES[directive[1].toLowerCase()]) {
         flushList();
         flushPara();
         htmlParts.push(DIRECTIVES[directive[1].toLowerCase()](directive[2] || ""));
+        return;
+      }
+      var imageMatch = IMAGE_LINE_RE.exec(line.trim());
+      var image = imageMatch && renderImage(imageMatch);
+      if (image) {
+        flushList();
+        flushPara();
+        htmlParts.push(image);
         return;
       }
       var ulMatch = /^[-*]\s+(.*)$/.exec(line);
@@ -591,6 +706,7 @@
         paraBuffer.push(line);
       }
     });
+    flushTable();
     flushList();
     flushPara();
     return htmlParts.join("");
@@ -709,6 +825,302 @@
     refreshStaging();
   }
 
+  // --- Formatting buttons: wrap the selection in the textarea being typed
+  // in (a page mid-edit, or the panel's), e.g. "**" ... "**" or
+  // "{red}" ... "{/red}". With nothing selected, insert an empty pair with
+  // the cursor inside it.
+  function wrapSelection(open, close) {
+    var ta = editTarget();
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    var inner = start + open.length;
+    replaceRange(ta, start, end, open + ta.value.slice(start, end) + close, inner, inner + (end - start));
+  }
+
+  function editTarget() {
+    return currentEditingSlot
+      ? cellEl(currentEditingSlot.side, currentEditingSlot.name)
+      : stagingTextEl();
+  }
+
+  // Replaces ta's [start, end) with text, keeping undo history where the
+  // browser allows it, then selects [selStart, selEnd).
+  function replaceRange(ta, start, end, text, selStart, selEnd) {
+    ta.focus();
+    ta.setSelectionRange(start, end);
+    if (!document.execCommand || !document.execCommand("insertText", false, text)) {
+      ta.setRangeText(text, start, end, "end");
+    }
+    ta.setSelectionRange(selStart, selEnd);
+  }
+
+  var LIST_PREFIX_RE = { ul: /^[-*]\s+/, ol: /^\d+\.\s+/ };
+
+  // Turns every line touched by the selection into a list item, or, if they
+  // already all are items of that kind, back into plain lines. Switching
+  // between bullets and numbers replaces the old marker.
+  function toggleList(kind) {
+    var ta = editTarget();
+    var value = ta.value;
+    // Whole lines from the selection's first to its last; a selection that
+    // ends right after a line break doesn't take in the next line.
+    var start = value.lastIndexOf("\n", ta.selectionStart - 1) + 1;
+    var selEnd = ta.selectionEnd;
+    if (selEnd > ta.selectionStart && value.charAt(selEnd - 1) === "\n") selEnd--;
+    var endNl = value.indexOf("\n", selEnd);
+    var end = endNl === -1 ? value.length : endNl;
+    var lines = value.slice(start, end).split("\n");
+    var isItem = function (l) {
+      return LIST_PREFIX_RE[kind].test(l);
+    };
+    var allItems = lines.every(function (l) {
+      return l.trim() === "" || isItem(l);
+    }) && lines.some(isItem);
+    var n = 0;
+    var out = lines.map(function (l) {
+      var bare = l.replace(LIST_PREFIX_RE.ul, "").replace(LIST_PREFIX_RE.ol, "");
+      if (allItems) return bare;
+      if (l.trim() === "" && lines.length > 1) return l;
+      n++;
+      return (kind === "ul" ? "- " : n + ". ") + bare;
+    }).join("\n");
+    replaceRange(ta, start, end, out, start, start + out.length);
+  }
+
+  // Inserts `block` (one or more lines) on lines of its own at `pos`, and
+  // puts the cursor right after it. A page textarea that isn't being edited
+  // any more (e.g. after a file dialog) is updated and re-rendered.
+  function insertLines(ta, pos, block) {
+    var value = ta.value;
+    var before = pos > 0 && value.charAt(pos - 1) !== "\n" ? "\n" : "";
+    var after = pos < value.length && value.charAt(pos) !== "\n" ? "\n" : "";
+    if (pos === value.length) after = "\n";
+    var text = before + block + after;
+    var caret = pos + text.length;
+    if (document.activeElement === ta) {
+      replaceRange(ta, pos, pos, text, caret, caret);
+    } else {
+      ta.value = value.slice(0, pos) + text + value.slice(pos);
+      ta.setSelectionRange(caret, caret);
+    }
+    var inner = ta.closest(".cell-inner");
+    if (inner && !inner.classList.contains("editing")) {
+      var slot = slotOfCell(ta);
+      renderCell(slot.side, slot.name);
+      refreshStaging();
+    }
+  }
+
+  function slotOfCell(ta) {
+    var parts = ta.id.split("-"); // "cell-front-A1"
+    return { side: parts[1], name: parts[2] };
+  }
+
+  function insertDivider() {
+    var ta = editTarget();
+    insertLines(ta, ta.selectionEnd, "---");
+  }
+
+  function insertTable() {
+    var ta = editTarget();
+    insertLines(ta, ta.selectionEnd, ["| A | B | C |", "|---|---|---|", "|   |   |   |", "|   |   |   |"].join("\n"));
+  }
+
+  // Pictures are scaled down to at most this many pixels on the long side:
+  // a page is ~74 x 105 mm, so this is still ~300 dpi at full page size,
+  // and keeps the exported .md reasonably small.
+  var IMAGE_MAX_PX = 1400;
+
+  function readImageFile(file, callback) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var dataUrl = reader.result;
+      if (file.type === "image/svg+xml" || file.type === "image/gif") return callback(dataUrl);
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, IMAGE_MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+        if (scale === 1 && file.size < 400 * 1024) return callback(dataUrl);
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        var ctx = canvas.getContext("2d");
+        // PNG keeps transparency (drawings, logos); photos go to JPEG.
+        var png = file.type === "image/png";
+        if (!png) {
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(png ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.88));
+      };
+      img.onerror = function () {
+        alert("Couldn't read this image: " + file.name);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function imageFiles(list) {
+    return Array.prototype.filter.call(list || [], function (f) {
+      return /^image\//.test(f.type);
+    });
+  }
+
+  // Image button: remember where to insert before the file dialog takes
+  // focus away (the page being edited closes when it loses focus).
+  var imageTarget = null;
+
+  function pickImage() {
+    var ta = editTarget();
+    imageTarget = { ta: ta, pos: ta.selectionEnd };
+    document.getElementById("image-file").click();
+  }
+
+  // Adds the pictures to the booklet and inserts one "![][img-N]" line per
+  // picture into `ta` at `pos`, in order.
+  function insertImages(ta, pos, files) {
+    var refs = [];
+    var pending = files.length;
+    files.forEach(function (file, i) {
+      readImageFile(file, function (dataUrl) {
+        refs[i] = "![][" + addImage(dataUrl) + "]";
+        if (--pending === 0) insertLines(ta, pos, refs.filter(Boolean).join("\n"));
+      });
+    });
+  }
+
+  // --- Tabs, help language and view options ---
+
+  function showTab(name) {
+    document.querySelectorAll(".tab").forEach(function (tab) {
+      var on = tab.dataset.tab === name;
+      tab.classList.toggle("active", on);
+      tab.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.getElementById("tab-editor").hidden = name !== "editor";
+    document.getElementById("tab-help").hidden = name !== "help";
+  }
+
+  function readPref(key) {
+    try {
+      return localStorage.getItem("foldlet." + key);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writePref(key, value) {
+    try {
+      localStorage.setItem("foldlet." + key, value);
+    } catch (e) {
+      /* private mode etc.: just don't remember */
+    }
+  }
+
+  function showHelpLang(lang) {
+    document.querySelectorAll(".help-body").forEach(function (el) {
+      el.hidden = el.dataset.lang !== lang;
+    });
+    document.querySelectorAll(".lang-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.lang === lang);
+    });
+    writePref("helpLang", lang);
+  }
+
+  function initChrome() {
+    document.querySelectorAll(".tab").forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        showTab(tab.dataset.tab);
+      });
+    });
+
+    document.querySelectorAll(".lang-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        showHelpLang(btn.dataset.lang);
+      });
+    });
+    showHelpLang(readPref("helpLang") || (/^ru\b/i.test(uiLang()) ? "ru" : "en"));
+
+    document.querySelectorAll("[data-keep-edit]").forEach(function (btn) {
+      // Keep focus (and the selection) in the textarea being edited.
+      btn.addEventListener("mousedown", function (e) {
+        e.preventDefault();
+      });
+      btn.addEventListener("click", function () {
+        if (btn.dataset.list) toggleList(btn.dataset.list);
+        else if (btn.dataset.insert === "divider") insertDivider();
+        else if (btn.dataset.insert === "table") insertTable();
+        else if (btn.dataset.insert === "image") pickImage();
+        else if (btn.dataset.color) wrapSelection("{" + btn.dataset.color + "}", "{/" + btn.dataset.color + "}");
+        else wrapSelection(btn.dataset.wrap, btn.dataset.wrap);
+      });
+    });
+
+    var imageInput = document.getElementById("image-file");
+    imageInput.addEventListener("change", function () {
+      var files = imageFiles(imageInput.files);
+      if (files.length && imageTarget) insertImages(imageTarget.ta, imageTarget.pos, files);
+      imageInput.value = "";
+    });
+
+    // Paste (Ctrl+V) a picture into any textarea: the panel's or a page's.
+    var textareas = [stagingTextEl()].concat(SLOTS.map(function (s) {
+      return cellEl(s.side, s.name);
+    }));
+    textareas.forEach(function (ta) {
+      ta.addEventListener("paste", function (e) {
+        var files = imageFiles(e.clipboardData && e.clipboardData.files);
+        if (!files.length) return;
+        e.preventDefault();
+        insertImages(ta, ta.selectionStart, files);
+      });
+    });
+
+    // Drop picture files onto a page (added at the end of its text) or onto
+    // a textarea (added at the cursor).
+    function hasFiles(e) {
+      return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, "Files") !== -1;
+    }
+    document.querySelectorAll(".cell, #staging-text").forEach(function (el) {
+      el.addEventListener("dragover", function (e) {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        el.classList.add("drop-target");
+      });
+      el.addEventListener("dragleave", function () {
+        el.classList.remove("drop-target");
+      });
+      el.addEventListener("drop", function (e) {
+        el.classList.remove("drop-target");
+        var files = imageFiles(e.dataTransfer && e.dataTransfer.files);
+        if (!files.length) return;
+        e.preventDefault();
+        var ta = el.tagName === "TEXTAREA" ? el : el.querySelector("textarea");
+        var editing = ta.closest(".cell-inner") && ta.closest(".cell-inner").classList.contains("editing");
+        var pos = ta === stagingTextEl() || editing ? ta.selectionStart : ta.value.length;
+        insertImages(ta, pos, files);
+      });
+    });
+
+    var sheetView = document.getElementById("sheet-view");
+    function syncSheetView() {
+      document.body.classList.toggle("sheet-view", sheetView.checked);
+    }
+    sheetView.addEventListener("change", syncSheetView);
+    syncSheetView();
+
+    var zoom = document.getElementById("zoom-select");
+    var savedZoom = readPref("zoom");
+    if (savedZoom && zoom.querySelector('option[value="' + savedZoom + '"]')) zoom.value = savedZoom;
+    function syncZoom() {
+      document.querySelector(".pages").style.setProperty("--zoom", zoom.value);
+      writePref("zoom", zoom.value);
+    }
+    zoom.addEventListener("change", syncZoom);
+    syncZoom();
+  }
+
   // Mirrors Import MD's heading convention ("## 1") so a round trip through
   // Export MD -> Import MD reproduces the same content.
   function exportMd() {
@@ -721,6 +1133,20 @@
           return "## " + page + "\n\n" + cellEl(slot.side, slot.name).value;
         })
         .join("\n\n") + "\n";
+    // Pictures the pages refer to, as markdown reference definitions: any
+    // markdown viewer shows them, and Import MD reads them back.
+    var used = {};
+    text.replace(/\]\[(img-\d+)\]|\]\((img-\d+)\)/g, function (m, a, b) {
+      used[a || b] = true;
+    });
+    var defs = Object.keys(used)
+      .filter(function (id) {
+        return images[id];
+      })
+      .map(function (id) {
+        return "[" + id + "]: " + images[id];
+      });
+    if (defs.length) text += "\n" + defs.join("\n\n") + "\n";
     var blob = new Blob([text], { type: "text/markdown" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -796,6 +1222,17 @@
 
   function importMdFile(file) {
     readFileAsText(file, function (text) {
+      // Picture definitions ("[img-1]: data:image/...") are taken out before
+      // the split into pages, wherever they are in the file.
+      var newImages = {};
+      text = text
+        .split(/\r\n|\r|\n/)
+        .filter(function (line) {
+          var def = /^\[(img-\d+)\]:\s*(data:image\/\S+)\s*$/.exec(line.trim());
+          if (def) newImages[def[1]] = def[2];
+          return !def;
+        })
+        .join("\n");
       var parsed = parseMarkdownSections(text);
       var sections = parsed.sections;
       if (Object.keys(sections).length === 0) {
@@ -807,6 +1244,7 @@
       }
       // Pages without a matching heading in the file are blanked — the .md
       // file defines the whole booklet.
+      images = newImages;
       SLOTS.forEach(function (slot) {
         var page = String(PAGE_NUMBERS[slot.side][slot.name]);
         cellEl(slot.side, slot.name).value = sections[page] || "";
@@ -864,6 +1302,8 @@
       "click",
       function (e) {
         if (!currentEditingSlot) return;
+        // Formatting buttons act on the page being edited, so they keep it open.
+        if (e.target.closest("[data-keep-edit]")) return;
         var wrapper = cellEl(currentEditingSlot.side, currentEditingSlot.name).closest(".cell-inner");
         if (!wrapper.contains(e.target)) {
           exitEditMode(currentEditingSlot.side, currentEditingSlot.name);
@@ -897,6 +1337,7 @@
       });
     });
     syncPresetOptions();
+    initChrome();
 
     loadDemo();
   }

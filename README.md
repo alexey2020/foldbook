@@ -1,4 +1,4 @@
-# Foldbook
+# Foldlet
 
 Turn a single A4 sheet into a printable 8-panel foldable booklet (16 with
 double-sided printing) — like pocketmod.com, but with no login. A pure
@@ -25,9 +25,11 @@ this reading-order number, never by coordinate.
 Text in the left column (A1, B1, C1, D1) is rotated 90°. Text in the right
 column (A2, B2, C2, D2) is rotated 270°.
 
-The editor shows two sheets, front (pages 1-8) and back (pages 9-16) — see
-"Double-sided printing" below for how to actually get content onto both
-sides of one physical sheet, and how the two sides line up once folded.
+On screen the editor shows the 16 pages upright, in reading order: front
+side (pages 1-8), then back side (pages 9-16). The rotated sheet layout is
+used only for printing (and by the **Sheet layout** toggle) — see
+"Double-sided printing" below for how to get content onto both sides of
+one physical sheet, and how the two sides line up once folded.
 
 ## Usage
 
@@ -38,11 +40,20 @@ build step, no network access.
 - Every page shows its **rendered** view by default (bold/italic/lists/
   dividers as real formatting, not raw markdown). Click a page to edit its
   raw text; click anywhere else (or another page) to render it again.
-- The unrotated **staging box** below the toolbar is a comfortable place to
-  type: pick a page from the **Page** dropdown (it loads that page's current
-  text), edit normally, then click **Insert into page** to push it back in.
+- The **Page** panel on the left is a roomier place to type: pick a page
+  (it loads that page's current text), edit normally, then click **Insert
+  into page** to push it back in.
+- The formatting buttons above the panel's text box (bold, italic, bullet
+  list, numbered list, divider, table, picture, colors) apply to the page being edited, or
+  to the Page panel if no page is open. The list buttons toggle: pressed on
+  lines that are already that kind of list, they turn them back into plain
+  lines.
 - **Show page numbers** toggles the small printed page number on every page.
   Unchecked, it's hidden and that space is freed up for content instead.
+- **Sheet layout** shows the pages as they land on the printed sheet
+  (rotated, out of order); **Zoom** scales the on-screen pages.
+- The **Help · Справка** tab explains all of this in Russian and English,
+  including how to fold the printed sheet.
 - **Export MD** downloads all 16 pages as a single `content.md`, one `## 1`
   through `## 16` section per page (in reading order).
 - **Import MD** loads a `.md` file split into pages by headings that name a
@@ -59,13 +70,26 @@ rendered at print time:
 - `**bold**`
 - `*italic*` or `_italic_`
 - `- item` / `* item` for a bullet list, `1. item` for a numbered list
+- `{red}text{/red}`: colored text within one line. Colors: `red`,
+  `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `gray`. Combines
+  with bold/italic (`**{blue}Title{/blue}**`) and can nest.
+- Pipe tables: lines starting with `|`, cells separated by `|`. A dash line
+  (`|---|---|`) after the first row makes it a header; colons in it align
+  columns (`:---`, `:---:`, `---:`). Inline formatting works in cells.
+- `![caption][img-1]` on its own line: a picture added to the booklet (picture
+  button, Ctrl+V, or drop a file onto a page). Large photos are scaled down to
+  1400 px on the long side. `![caption](https://...)` shows a web picture.
+  Pictures fill at most the page width and shrink to fit the height left.
+  Export MD writes the pictures at the end of the file as reference
+  definitions (`[img-1]: data:image/...`), so the file stays self-contained
+  and other markdown viewers show them too; Import MD reads them back.
 - `---` on its own line: a divider. A page containing one or more dividers
   is split into equal-height rows separated by a dashed line matching the
   main page borders.
 
 ### Page presets
 
-Pick a page in the staging box, choose a **Preset** and click **Apply** to
+Pick a page in the Page panel, choose a **Preset** and click **Apply** to
 fill that page with a ready-made layout (it asks first if the page already
 has text). A preset is just one directive line in the page's text, so it is
 saved by Export MD, loaded by Import MD and can be edited by hand:

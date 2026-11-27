@@ -138,6 +138,56 @@ body {
   margin-bottom: 0;
 }
 
+/* Text colors: {red}text{/red} in the page markdown (see web/app.js).
+   Dark enough to stay readable in print, distinct enough to tell apart. */
+.ink-red { color: #d32f2f; }
+.ink-orange { color: #e8710a; }
+.ink-yellow { color: #c79100; }
+.ink-green { color: #2e7d32; }
+.ink-blue { color: #1565c0; }
+.ink-purple { color: #7b1fa2; }
+.ink-pink { color: #d81b60; }
+.ink-gray { color: #808080; }
+
+/* Pipe tables (| a | b |). */
+.cell-content .md-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 2mm 0;
+  white-space: normal;
+}
+
+.cell-content .md-table th,
+.cell-content .md-table td {
+  border: 0.2mm solid #999;
+  padding: 0.5mm 1mm;
+  height: 1.5em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.cell-content .md-table th {
+  background: #eee;
+  font-weight: bold;
+}
+
+/* A picture on a line of its own: page width at most, and in the page's
+   flex column it shrinks (keeping its proportions) rather than overflow. */
+.cell-content .md-img {
+  display: block;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  margin: 0 auto 2mm auto;
+}
+
+.cell-content .md-table:last-child,
+.cell-content .md-img:last-child {
+  margin-bottom: 0;
+}
+
 /* A "---" divider splits a cell into a CSS grid of equal-height, bordered
    rows — the exact same technique used to divide the sheet into its 8
    pages (.sheet is display:grid with grid-auto-rows/grid-template-rows;
@@ -155,6 +205,7 @@ body {
   border: 0.2mm dashed #999;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
