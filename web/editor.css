@@ -494,6 +494,21 @@ textarea.cell-content {
   object-fit: contain;
 }
 
+/* The same pictures, small, in the editor's side panel. */
+.fold-steps-panel {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 8px;
+  margin: 0;
+}
+
+.fold-steps-panel img {
+  height: 78px;
+}
+
+.fold-steps-panel figcaption {
+  font-size: 11px;
+}
+
 .fold-steps figcaption {
   font-size: 13px;
   line-height: 1.35;

@@ -111,6 +111,15 @@ window.FOLDLET_I18N = {
     "Some page numbers appear more than once: ": "Некоторые номера страниц повторяются: ",
     ".\nOnly the last section with each number was used; the earlier ones were dropped. Check the page numbering in the file.":
       ".\nИспользована только последняя часть с каждым номером, более ранние пропущены. Проверьте нумерацию страниц в файле.",
+
+    // Folding pictures in the panel
+    "How to fold": "Как сложить",
+    "One A4 sheet, one cut, a few folds: a pocket booklet.": "Один лист A4, один разрез, несколько сгибов — и готова карманная книжечка.",
+    "The printed sheet": "Лист после печати",
+    "Creased, with the cut made": "Согнут по сгибам, разрез сделан",
+    "Folded lengthwise, ends pushed to the middle": "Сложен вдоль, концы сдвинуты к середине",
+    "The cross: fold it into a stack": "Получился крест: сложите его стопкой",
+    "Done": "Готово",
   },
 
   eo: {
@@ -221,5 +230,14 @@ window.FOLDLET_I18N = {
     "Some page numbers appear more than once: ": "Iuj paĝnumeroj aperas pli ol unufoje: ",
     ".\nOnly the last section with each number was used; the earlier ones were dropped. Check the page numbering in the file.":
       ".\nNur la lasta parto kun ĉiu numero estis uzita; la antaŭaj estis preterlasitaj. Kontrolu la paĝnumerojn en la dosiero.",
+
+    // Folding pictures in the panel
+    "How to fold": "Kiel faldi",
+    "One A4 sheet, one cut, a few folds: a pocket booklet.": "Unu A4-folio, unu tranĉo, kelkaj faldoj: poŝa libreto.",
+    "The printed sheet": "La presita folio",
+    "Creased, with the cut made": "Faldita laŭ la faldoj, kun la tranĉo",
+    "Folded lengthwise, ends pushed to the middle": "Faldita laŭlonge, la finoj puŝitaj al la mezo",
+    "The cross: fold it into a stack": "La kruco: faldu ĝin en stakon",
+    "Done": "Preta",
   },
 };
