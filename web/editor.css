@@ -472,6 +472,35 @@ textarea.cell-content {
   padding: 24px;
 }
 
+/* "How to fold": the picture steps under the list. */
+.fold-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 16px;
+  margin: 16px 0 8px;
+}
+
+.fold-steps figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.fold-steps img {
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+}
+
+.fold-steps figcaption {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--muted);
+  text-align: center;
+}
+
 .help-body {
   background: var(--surface);
   border: 1px solid var(--line);
