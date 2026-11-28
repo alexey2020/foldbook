@@ -141,8 +141,7 @@ body {
 
 .panel select,
 .panel input[type="date"],
-.panel input[type="datetime-local"],
-.panel textarea {
+.panel input[type="datetime-local"] {
   font: inherit;
   color: var(--ink);
   background: #fff;
@@ -151,14 +150,8 @@ body {
   padding: 6px 8px;
 }
 
-.panel textarea.drop-target {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
 .panel select:focus,
-.panel input:focus,
-.panel textarea:focus {
+.panel input:focus {
   outline: 2px solid var(--accent-soft);
   border-color: var(--accent);
 }
@@ -205,6 +198,10 @@ body {
   gap: 8px;
 }
 
+.preset-target {
+  color: var(--accent-dark);
+}
+
 .panel-card h2 {
   margin: 0;
   font-size: 11px;
@@ -214,11 +211,11 @@ body {
   color: var(--muted);
 }
 
-.panel textarea {
-  resize: vertical;
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.45;
+.panel-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
 }
 
 .row {
@@ -338,6 +335,11 @@ body {
   gap: 3mm;
 }
 
+/* "Back side" unchecked: pages 9-16 are neither shown nor printed. */
+body.no-back .sheet-group.back {
+  display: none;
+}
+
 .sheet-label {
   font-size: 3.2mm;
   font-weight: 700;
@@ -382,10 +384,10 @@ textarea.cell-content {
 
 /* Page view (the default on screen): each page is a normal upright card,
    in reading order, instead of the rotated cells of the printed sheet.
-   Same DOM, same mm sizes; only the arrangement differs. Printing (and
-   the "Sheet layout" toggle) use layout.css's sheet as is. */
+   Same DOM, same mm sizes; only the arrangement differs. Printing uses
+   layout.css's sheet as is. */
 @media screen {
-  body:not(.sheet-view) .sheet {
+  .sheet {
     width: 100%;
     height: auto;
     display: grid;
@@ -398,7 +400,7 @@ textarea.cell-content {
     box-shadow: none;
   }
 
-  body:not(.sheet-view) .sheet .cell {
+  .sheet .cell {
     width: 74.25mm;
     height: 105mm;
     border: 0;
@@ -408,36 +410,40 @@ textarea.cell-content {
     transition: box-shadow 0.15s;
   }
 
-  body:not(.sheet-view) .sheet .cell:hover {
+  .sheet .cell:hover {
     box-shadow: 0 0 0 0.4mm #e9d9c9, var(--shadow-page);
   }
 
-  body:not(.sheet-view) .sheet .cell:has(.editing) {
+  /* The page presets and formatting buttons will act on. */
+  .sheet .cell.selected {
+    box-shadow: 0 0 0 0.4mm var(--accent-soft), 0 0 0 0.7mm #f0b9a4, var(--shadow-page);
+  }
+
+  .sheet .cell:has(.editing) {
     box-shadow: 0 0 0 0.5mm var(--accent), var(--shadow-page);
   }
 
-  body .sheet .cell.drop-target,
-  body:not(.sheet-view) .sheet .cell.drop-target {
+  .sheet .cell.drop-target {
     box-shadow: 0 0 0 0.6mm var(--accent), var(--shadow-page);
     background: var(--accent-soft);
   }
 
-  body:not(.sheet-view) .sheet .cell-inner {
+  .sheet .cell-inner {
     transform: translate(-50%, -50%);
   }
 
   /* DOM order is A1,A2,B1,B2,C1,C2,D1,D2 = pages 8,7,1,6,2,5,3,4 (9..16 on
      the back); show them 1..8. */
-  body:not(.sheet-view) .sheet .cell:nth-child(1) { order: 8; }
-  body:not(.sheet-view) .sheet .cell:nth-child(2) { order: 7; }
-  body:not(.sheet-view) .sheet .cell:nth-child(3) { order: 1; }
-  body:not(.sheet-view) .sheet .cell:nth-child(4) { order: 6; }
-  body:not(.sheet-view) .sheet .cell:nth-child(5) { order: 2; }
-  body:not(.sheet-view) .sheet .cell:nth-child(6) { order: 5; }
-  body:not(.sheet-view) .sheet .cell:nth-child(7) { order: 3; }
-  body:not(.sheet-view) .sheet .cell:nth-child(8) { order: 4; }
+  .sheet .cell:nth-child(1) { order: 8; }
+  .sheet .cell:nth-child(2) { order: 7; }
+  .sheet .cell:nth-child(3) { order: 1; }
+  .sheet .cell:nth-child(4) { order: 6; }
+  .sheet .cell:nth-child(5) { order: 2; }
+  .sheet .cell:nth-child(6) { order: 5; }
+  .sheet .cell:nth-child(7) { order: 3; }
+  .sheet .cell:nth-child(8) { order: 4; }
 
-  body:not(.sheet-view) .cell-label {
+  .cell-label {
     color: #b3a899;
     font-weight: 600;
   }

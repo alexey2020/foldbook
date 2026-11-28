@@ -7,6 +7,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 7l12 3.5V28L4 24.5z' fill='%23e5704a'/%3E%3Cpath d='M28 7l-12 3.5V28l12-3.5z' fill='%23b9502c'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../layout.css">
 <link rel="stylesheet" href="editor.css">
+<!-- Visit statistics (GoatCounter: no cookies, no personal data). It
+     doesn't count opens from a local file or localhost. -->
+<script data-goatcounter="https://alexey2020.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
   <header class="topbar no-print">
@@ -34,25 +37,7 @@
   <main id="tab-editor" class="tab-panel workspace">
     <aside class="panel no-print">
       <section class="panel-card">
-        <h2>Page</h2>
-        <select id="staging-cell" aria-label="Page">
-          <option value="front:B1">Page 1</option>
-          <option value="front:C1">Page 2</option>
-          <option value="front:D1">Page 3</option>
-          <option value="front:D2">Page 4</option>
-          <option value="front:C2">Page 5</option>
-          <option value="front:B2">Page 6</option>
-          <option value="front:A2">Page 7</option>
-          <option value="front:A1">Page 8</option>
-          <option value="back:B1">Page 9 (back)</option>
-          <option value="back:C1">Page 10 (back)</option>
-          <option value="back:D1">Page 11 (back)</option>
-          <option value="back:D2">Page 12 (back)</option>
-          <option value="back:C2">Page 13 (back)</option>
-          <option value="back:B2">Page 14 (back)</option>
-          <option value="back:A2">Page 15 (back)</option>
-          <option value="back:A1">Page 16 (back)</option>
-        </select>
+        <h2>Format</h2>
         <div class="format-bar" role="toolbar" aria-label="Formatting">
           <button class="fmt fmt-bold" type="button" data-keep-edit data-wrap="**" title="Bold">B</button>
           <button class="fmt fmt-italic" type="button" data-keep-edit data-wrap="*" title="Italic">I</button>
@@ -82,23 +67,43 @@
           <button class="swatch ink-pink" type="button" data-keep-edit data-color="pink" title="Pink"></button>
           <button class="swatch ink-gray" type="button" data-keep-edit data-color="gray" title="Gray"></button>
         </div>
-        <textarea id="staging-text" rows="9" placeholder="Pick a page, type here, then Insert into page. Or just click a page and type on it."></textarea>
-        <button id="btn-staging-apply" class="btn btn-block" type="button">Insert into page</button>
+        <p class="panel-hint">Click a page to type on it. The buttons work on the page you're editing, or the last one you clicked.</p>
       </section>
 
       <section class="panel-card">
-        <h2>Preset</h2>
+        <h2>Preset <span id="preset-target" class="preset-target"></span></h2>
         <div class="row">
           <select id="preset-select" aria-label="Preset">
+            <option value="">No preset</option>
             <option value="calendar">Calendar (this month)</option>
             <option value="grid">Grid</option>
             <option value="dots">Dot grid</option>
             <option value="lines">Lined</option>
             <option value="checklist">Checklist</option>
             <option value="wheel">Wheel of life</option>
+            <option value="mandala">Mandala to color</option>
+            <option value="sudoku">Sudoku</option>
             <option value="tracker">100 hours / days</option>
           </select>
-          <button id="btn-preset-apply" class="btn" type="button">Apply</button>
+        </div>
+        <div class="options" id="sudoku-options" hidden>
+          <div class="row">
+            <select id="sudoku-level" aria-label="Level">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <select id="sudoku-count" aria-label="Puzzles per page">
+              <option value="1">1 per page</option>
+              <option value="2">2 per page</option>
+              <option value="4">4 per page</option>
+              <option value="6">6 per page</option>
+            </select>
+          </div>
+          <button id="btn-new-sudoku" class="btn btn-block" type="button">New sudoku</button>
+        </div>
+        <div class="options" id="mandala-options" hidden>
+          <button id="btn-new-mandala" class="btn btn-block" type="button">New mandala</button>
         </div>
         <div class="options" id="tracker-options" hidden>
           <div class="row">
@@ -123,7 +128,8 @@
       <section class="panel-card">
         <h2>View</h2>
         <label class="checkbox-label"><input id="show-page-numbers" type="checkbox" checked> Show page numbers</label>
-        <label class="checkbox-label"><input id="sheet-view" type="checkbox"> Sheet layout (as printed)</label>
+        <label class="checkbox-label"><input id="ask-replace" type="checkbox" checked> Ask before a preset replaces text</label>
+        <label class="checkbox-label"><input id="show-back" type="checkbox" checked> Back side (pages 9–16)</label>
         <div class="row">
           <label for="zoom-select">Zoom</label>
           <select id="zoom-select">
@@ -243,16 +249,17 @@
       <h2>Быстрый старт</h2>
       <ol>
         <li>Щёлкните по странице и пишите прямо на ней.</li>
-        <li>Панель слева — для удобного набора текста, цветов и готовых шаблонов страниц.</li>
+        <li>Панель слева — кнопки оформления, цвета и готовые шаблоны страниц.</li>
         <li>Нажмите <b>Print / Save PDF</b>, распечатайте и сложите лист (см. ниже).</li>
       </ol>
 
       <h2>Редактирование</h2>
       <ul>
         <li>Страницы показаны по порядку чтения, 1–16. Щелчок по странице открывает её исходный текст, щелчок мимо — показывает результат.</li>
-        <li>В панели <b>Page</b> выберите страницу, отредактируйте текст и нажмите <b>Insert into page</b>.</li>
-        <li><b>Sheet layout</b> показывает, как страницы лягут на печатный лист: повёрнутыми и не по порядку. Так и задумано — после складывания они встанут правильно.</li>
+        <li>Кнопки панели <b>Format</b> работают на открытой странице, а если ни одна не открыта — на последней, по которой вы щёлкнули.</li>
+        <li>На печатном листе страницы будут повёрнуты и идут не по порядку. Так и задумано: после складывания они встанут правильно.</li>
         <li><b>Show page numbers</b> прячет или показывает номера страниц; без номеров на странице чуть больше места.</li>
+        <li>Снимите <b>Back side (pages 9–16)</b>, если нужна книжечка на 8 страниц: оборотная сторона пропадёт с экрана и из печати. Её текст не теряется и вернётся, если поставить галочку снова.</li>
       </ul>
 
       <h2>Оформление текста</h2>
@@ -286,7 +293,7 @@
       </ul>
 
       <h2>Шаблоны страниц</h2>
-      <p>Выберите страницу, затем шаблон в панели <b>Preset</b> и нажмите <b>Apply</b>. Шаблон — это одна строка в тексте страницы; её можно поправить вручную, и она сохраняется в .md.</p>
+      <p>Щёлкните по странице (она подсветится, а её номер появится в заголовке панели <b>Preset</b>), затем выберите шаблон — он сразу появится на странице. Если на странице уже есть свой текст, Foldlet спросит, заменить ли его (галочка <b>Ask before a preset replaces text</b> в панели View); страницу, на которой только шаблон, он меняет без вопросов. Шаблон — это одна строка в тексте страницы; её можно поправить вручную, и она сохраняется в .md.</p>
       <table>
         <tr><th>Шаблон</th><th>Строка</th></tr>
         <tr><td>Календарь</td><td><code>{{calendar 2026-11}}</code> (без месяца — текущий)</td></tr>
@@ -295,6 +302,8 @@
         <tr><td>Линейка 7 мм</td><td><code>{{lines}}</code></td></tr>
         <tr><td>Чек-лист</td><td><code>{{checklist}}</code></td></tr>
         <tr><td>Колесо баланса</td><td><code>{{wheel Здоровье, Работа, Деньги, ...}}</code></td></tr>
+        <tr><td>Судоку</td><td><code>{{sudoku 483920 medium 4}}</code> — номер-seed, уровень (<code>easy</code>, <code>medium</code>, <code>hard</code>) и сколько штук на странице (1, 2, 4 или 6). У каждой ровно одно решение. Кнопка <b>New sudoku</b> даёт новые</td></tr>
+        <tr><td>Мандала-раскраска</td><td><code>{{mandala 483920}}</code> — число задаёт рисунок: кнопка <b>New mandala</b> рисует новую, а понравившуюся можно сохранить, оставив число</td></tr>
         <tr><td>100 часов</td><td><code>{{hours 2026-11-25 14:30 squares marks hints}}</code></td></tr>
         <tr><td>100 дней</td><td><code>{{days 2026-11-25 circles marks hints}}</code></td></tr>
       </table>
@@ -333,16 +342,17 @@
       <h2>Quick start</h2>
       <ol>
         <li>Click a page and type right on it.</li>
-        <li>Use the panel on the left for comfortable typing, colors and ready-made page layouts.</li>
+        <li>The panel on the left has formatting buttons, colors and ready-made page layouts.</li>
         <li>Click <b>Print / Save PDF</b>, print, and fold the sheet (see below).</li>
       </ol>
 
       <h2>Editing</h2>
       <ul>
         <li>Pages are shown in reading order, 1–16. Click a page to see its source text; click elsewhere to see the result.</li>
-        <li>In the <b>Page</b> panel pick a page, edit its text and click <b>Insert into page</b>.</li>
-        <li><b>Sheet layout</b> shows how the pages land on the printed sheet: rotated and out of order. That's expected; folding puts them in order.</li>
+        <li>The <b>Format</b> buttons work on the page you're editing, or, if none is open, on the last page you clicked.</li>
+        <li>On the printed sheet the pages are rotated and out of order. That's expected; folding puts them in order.</li>
         <li><b>Show page numbers</b> hides or shows the page numbers; without them each page has a little more room.</li>
+        <li>Uncheck <b>Back side (pages 9–16)</b> for an 8-page booklet: the back side disappears from the screen and from printing. Its text is kept and comes back when you check the box again.</li>
       </ul>
 
       <h2>Formatting</h2>
@@ -376,7 +386,7 @@
       </ul>
 
       <h2>Page presets</h2>
-      <p>Pick a page, then a layout under <b>Preset</b>, and click <b>Apply</b>. A preset is one line in the page's text: you can edit it by hand, and it's saved in the .md.</p>
+      <p>Click a page (it gets highlighted and its number shows in the <b>Preset</b> panel's heading), then pick a layout: it appears on the page right away. If the page has text of its own, Foldlet asks before replacing it (the <b>Ask before a preset replaces text</b> box in the View panel); a page holding only a preset is swapped without asking. A preset is one line in the page's text: you can edit it by hand, and it's saved in the .md.</p>
       <table>
         <tr><th>Preset</th><th>Line</th></tr>
         <tr><td>Calendar</td><td><code>{{calendar 2026-11}}</code> (no month = this month)</td></tr>
@@ -385,6 +395,8 @@
         <tr><td>Lined, 7 mm</td><td><code>{{lines}}</code></td></tr>
         <tr><td>Checklist</td><td><code>{{checklist}}</code></td></tr>
         <tr><td>Wheel of life</td><td><code>{{wheel Health, Career, Money, ...}}</code></td></tr>
+        <tr><td>Sudoku</td><td><code>{{sudoku 483920 medium 4}}</code>: a seed number, the level (<code>easy</code>, <code>medium</code>, <code>hard</code>) and how many per page (1, 2, 4 or 6). Each has exactly one solution. <b>New sudoku</b> makes new ones</td></tr>
+        <tr><td>Mandala to color</td><td><code>{{mandala 483920}}</code>: the number sets the pattern. <b>New mandala</b> draws a new one; keep the number to keep one you like</td></tr>
         <tr><td>100 hours</td><td><code>{{hours 2026-11-25 14:30 squares marks hints}}</code></td></tr>
         <tr><td>100 days</td><td><code>{{days 2026-11-25 circles marks hints}}</code></td></tr>
       </table>

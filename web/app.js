@@ -73,7 +73,6 @@
       cellEl(slot.side, slot.name).value = DEMO_CONTENT[page] || "";
     });
     renderAllCells();
-    refreshStaging();
   }
 
   function clearAll() {
@@ -82,7 +81,6 @@
       cellEl(slot.side, slot.name).value = "";
     });
     renderAllCells();
-    refreshStaging();
   }
 
   // --- Print rendering: bold/italic/lists, dividers ---
@@ -297,6 +295,453 @@
     );
   }
 
+  // --- Mandala to color in ---
+  //
+  // {{mandala 483920}}: the number seeds a random generator, so the same
+  // line always draws the same mandala (it survives re-rendering and
+  // Export/Import), while each Apply picks a new number. Any text works as
+  // a seed too. Rings are drawn from the outside in, every shape filled
+  // white, so each ring's shapes neatly cover the one before: the result
+  // is a set of closed regions to color.
+
+  function seededRandom(seedText) {
+    var h = 2166136261;
+    for (var i = 0; i < seedText.length; i++) h = Math.imul(h ^ seedText.charCodeAt(i), 16777619);
+    var a = h >>> 0;
+    return function () {
+      // mulberry32
+      a = (a + 0x6d2b79f5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function renderMandala(arg) {
+    var seed = String(arg || "1").trim();
+    var rand = seededRandom(seed);
+    var pick = function (list) {
+      return list[Math.floor(rand() * list.length)];
+    };
+    var between = function (lo, hi) {
+      return lo + rand() * (hi - lo);
+    };
+    var f = function (n) {
+      return n.toFixed(2);
+    };
+    var pt = function (r, a) {
+      return f(r * Math.cos(a)) + " " + f(r * Math.sin(a));
+    };
+    var circle = function (r) {
+      return '<circle r="' + f(r) + '"/>';
+    };
+
+    // Ring boundaries: a centre disc, then 5-7 rings of varied width.
+    var R = 96;
+    var centre = between(6, 10);
+    var count = 5 + Math.floor(rand() * 3);
+    var weights = [];
+    var sum = 0;
+    for (var i = 0; i < count; i++) {
+      weights.push(between(0.7, 1.6));
+      sum += weights[i];
+    }
+    var edges = [centre];
+    for (i = 0; i < count; i++) edges.push(edges[i] + ((R - centre) * weights[i]) / sum);
+
+    var base = pick([8, 10, 12, 16]);
+    var svg = "";
+
+    // Each motif fills the ring r0..r1 with m copies around the circle.
+    var MOTIFS = {
+      // Pointed petals, often with a smaller petal inside.
+      petals: function (r0, r1, m, off) {
+        var out = "";
+        var w = (Math.PI / m) * between(0.75, 1);
+        var inner = rand() < 0.6;
+        for (var k = 0; k < m; k++) {
+          var a = (2 * Math.PI * k) / m + off;
+          out += petalPath(r0, r1, a, w);
+          if (inner) out += petalPath(r0 + (r1 - r0) * 0.22, r1 - (r1 - r0) * 0.25, a, w * 0.45);
+        }
+        return out;
+      },
+      // Rounded lobes; at full width they touch and make a scalloped ring.
+      lobes: function (r0, r1, m, off) {
+        var out = "";
+        var w = (Math.PI / m) * pick([1, 1, 0.85]);
+        var inner = rand() < 0.5;
+        for (var k = 0; k < m; k++) {
+          var a = (2 * Math.PI * k) / m + off;
+          out += lobePath(r0, r1, a, w);
+          if (inner) out += lobePath(r0, r0 + (r1 - r0) * 0.55, a, w * 0.55);
+        }
+        return out;
+      },
+      // A ring of circles, sometimes with a dot or a second circle inside.
+      beads: function (r0, r1, m, off) {
+        var out = "";
+        var rm = (r0 + r1) / 2;
+        var c = Math.min((r1 - r0) / 2, rm * Math.sin(Math.PI / m)) * 0.92;
+        var inner = pick([0, 0.5, 0.22]);
+        for (var k = 0; k < m; k++) {
+          var a = (2 * Math.PI * k) / m + off;
+          var x = f(rm * Math.cos(a));
+          var y = f(rm * Math.sin(a));
+          out += '<circle cx="' + x + '" cy="' + y + '" r="' + f(c) + '"/>';
+          if (inner) out += '<circle cx="' + x + '" cy="' + y + '" r="' + f(c * inner) + '"/>';
+        }
+        return out;
+      },
+      // A star of triangular teeth, sometimes doubled.
+      teeth: function (r0, r1, m, off) {
+        var star = function (rIn, rOut, shift) {
+          var d = "";
+          for (var k = 0; k < m; k++) {
+            var a = (2 * Math.PI * k) / m + off + shift;
+            d += (k ? "L" : "M") + pt(rIn, a - Math.PI / m) + "L" + pt(rOut, a);
+          }
+          return '<path d="' + d + 'Z"/>';
+        };
+        var out = star(r0, r1, 0);
+        if (rand() < 0.5) out += star(r0, r0 + (r1 - r0) * 0.55, Math.PI / m);
+        return out;
+      },
+      // Diamonds standing on the ring, with a smaller one inside.
+      diamonds: function (r0, r1, m, off) {
+        var out = "";
+        var rm = (r0 + r1) / 2;
+        var w = (Math.PI / m) * 0.8;
+        for (var k = 0; k < m; k++) {
+          var a = (2 * Math.PI * k) / m + off;
+          out += '<path d="M' + pt(r0, a) + "L" + pt(rm, a - w) + "L" + pt(r1, a) + "L" + pt(rm, a + w) + 'Z"/>';
+          out += '<path d="M' + pt(r0 + (r1 - r0) * 0.25, a) + "L" + pt(rm, a - w * 0.45) + "L" +
+            pt(r1 - (r1 - r0) * 0.25, a) + "L" + pt(rm, a + w * 0.45) + 'Z"/>';
+        }
+        return out;
+      },
+    };
+
+    function petalPath(r0, r1, a, w) {
+      var d = r1 - r0;
+      return '<path d="M' + pt(r0, a) +
+        "C" + pt(r0 + d * 0.35, a - w) + " " + pt(r0 + d * 0.85, a - w * 0.55) + " " + pt(r1, a) +
+        "C" + pt(r0 + d * 0.85, a + w * 0.55) + " " + pt(r0 + d * 0.35, a + w) + " " + pt(r0, a) + 'Z"/>';
+    }
+
+    function lobePath(r0, r1, a, w) {
+      var top = r1 + (r1 - r0) * 0.12;
+      return '<path d="M' + pt(r0, a - w) + "C" + pt(top, a - w) + " " + pt(top, a + w) + " " + pt(r0, a + w) + 'Z"/>';
+    }
+
+    var names = Object.keys(MOTIFS);
+    var last = "";
+    for (i = count - 1; i >= 0; i--) {
+      var r0 = edges[i];
+      var r1 = edges[i + 1];
+      var rm = (r0 + r1) / 2;
+      // Outer rings are longer, so they can hold more copies.
+      var m = rm > 45 && rand() < 0.5 ? base * 2 : rm < 22 && base >= 12 ? base / 2 : base;
+      var name;
+      do {
+        name = pick(names);
+      } while (name === last);
+      last = name;
+      var off = rand() < 0.5 ? 0 : Math.PI / m;
+      svg += circle(r1);
+      // Sometimes a second, offset layer peeks out from behind.
+      if ((name === "petals" || name === "lobes") && rand() < 0.4) {
+        svg += MOTIFS[name](r0, r1 - (r1 - r0) * 0.2, m, off + Math.PI / m);
+      }
+      svg += MOTIFS[name](r0, r1, m, off);
+    }
+
+    // Centre: a disc with a small flower.
+    svg += circle(centre);
+    var cn = pick([5, 6, 8]);
+    for (i = 0; i < cn; i++) svg += petalPath(centre * 0.25, centre * 0.9, (2 * Math.PI * i) / cn, Math.PI / cn);
+    svg += circle(centre * 0.25);
+
+    return presetBlock(
+      "mandala",
+      '<div class="mandala-title">' + (/^ru/i.test(uiLang()) ? "Мандала " : "Mandala ") + escapeHtml(seed) + "</div>" +
+      '<svg class="preset-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-98 -98 196 196" preserveAspectRatio="xMidYMid meet">' +
+        '<g fill="#fff" stroke="#222" stroke-width="0.7" stroke-linejoin="round">' + svg + "</g></svg>"
+    );
+  }
+
+  // --- Sudoku ---
+  //
+  // {{sudoku 483920 medium 4}}: seed, level (easy / medium / hard) and how
+  // many puzzles share the page (1, 2, 4 or 6). Like the mandala, the seed
+  // makes the same line always produce the same puzzles. Every puzzle has
+  // exactly one solution. The levels differ in what it takes to solve:
+  //   easy   - ~38 givens; "only one digit fits this cell" all the way;
+  //   medium - ~30 givens; also "this digit fits only one cell in a row,
+  //            column or box";
+  //   hard   - as few givens as uniqueness allows, and those two rules
+  //            alone are not enough.
+
+  var SUDOKU_LEVELS = { easy: 38, medium: 30, hard: 0 };
+  var SUDOKU_COUNTS = [1, 2, 4, 6];
+  var SUDOKU_LAYOUT = { 1: [1, 1], 2: [1, 2], 4: [2, 2], 6: [2, 3] }; // columns, rows
+
+  function shuffled(list, rand) {
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rand() * (i + 1));
+      var t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+    return a;
+  }
+
+  // A random full grid: the classic pattern, with rows shuffled within
+  // bands, bands shuffled, the same for columns, and the digits relabelled.
+  function sudokuSolution(rand) {
+    var order = function () {
+      var out = [];
+      shuffled([0, 1, 2], rand).forEach(function (band) {
+        shuffled([0, 1, 2], rand).forEach(function (r) {
+          out.push(band * 3 + r);
+        });
+      });
+      return out;
+    };
+    var rows = order();
+    var cols = order();
+    var digits = shuffled([1, 2, 3, 4, 5, 6, 7, 8, 9], rand);
+    var grid = [];
+    for (var r = 0; r < 9; r++) {
+      for (var c = 0; c < 9; c++) {
+        grid.push(digits[(3 * (rows[r] % 3) + Math.floor(rows[r] / 3) + cols[c]) % 9]);
+      }
+    }
+    return grid;
+  }
+
+  var SUDOKU_UNITS = (function () {
+    var units = [];
+    for (var i = 0; i < 9; i++) {
+      var row = [];
+      var col = [];
+      var box = [];
+      for (var j = 0; j < 9; j++) {
+        row.push(i * 9 + j);
+        col.push(j * 9 + i);
+        box.push((Math.floor(i / 3) * 3 + Math.floor(j / 3)) * 9 + (i % 3) * 3 + (j % 3));
+      }
+      units.push(row, col, box);
+    }
+    return units;
+  })();
+
+  // Bit mask of the digits that can still go in cell i (bit d = digit d).
+  function sudokuCandidates(grid, i) {
+    var r = Math.floor(i / 9);
+    var c = i % 9;
+    var used = 0;
+    for (var k = 0; k < 9; k++) {
+      used |= 1 << grid[r * 9 + k];
+      used |= 1 << grid[k * 9 + c];
+    }
+    var br = r - (r % 3);
+    var bc = c - (c % 3);
+    for (var dr = 0; dr < 3; dr++) {
+      for (var dc = 0; dc < 3; dc++) used |= 1 << grid[(br + dr) * 9 + bc + dc];
+    }
+    return ~used & 0x3fe;
+  }
+
+  function bitCount(m) {
+    var n = 0;
+    for (; m; m &= m - 1) n++;
+    return n;
+  }
+
+  // Number of solutions, stopping at `limit`.
+  function sudokuCount(grid, limit) {
+    var best = -1;
+    var bestMask = 0;
+    var bestN = 10;
+    for (var i = 0; i < 81; i++) {
+      if (grid[i]) continue;
+      var m = sudokuCandidates(grid, i);
+      var n = bitCount(m);
+      if (n < bestN) {
+        best = i;
+        bestMask = m;
+        bestN = n;
+        if (n < 2) break;
+      }
+    }
+    if (best === -1) return 1;
+    var count = 0;
+    for (var d = 1; d <= 9 && count < limit; d++) {
+      if (!(bestMask & (1 << d))) continue;
+      grid[best] = d;
+      count += sudokuCount(grid, limit - count);
+    }
+    grid[best] = 0;
+    return count;
+  }
+
+  // Solves with naked singles (and, if `hidden`, hidden singles) only;
+  // true if that fills the whole grid.
+  function sudokuSinglesSolve(puzzle, hidden) {
+    var grid = puzzle.slice();
+    var progress = true;
+    while (progress) {
+      progress = false;
+      for (var i = 0; i < 81; i++) {
+        if (grid[i]) continue;
+        var m = sudokuCandidates(grid, i);
+        if (!m) return false;
+        if (bitCount(m) === 1) {
+          grid[i] = Math.log2(m);
+          progress = true;
+        }
+      }
+      if (progress || !hidden) continue;
+      for (var u = 0; u < SUDOKU_UNITS.length && !progress; u++) {
+        for (var d = 1; d <= 9 && !progress; d++) {
+          var spot = -1;
+          var spots = 0;
+          var unit = SUDOKU_UNITS[u];
+          for (var k = 0; k < 9; k++) {
+            if (grid[unit[k]] === d) {
+              spots = -1;
+              break;
+            }
+            if (!grid[unit[k]] && sudokuCandidates(grid, unit[k]) & (1 << d)) {
+              spot = unit[k];
+              spots++;
+            }
+          }
+          if (spots === 1) {
+            grid[spot] = d;
+            progress = true;
+          }
+        }
+      }
+    }
+    return grid.indexOf(0) === -1;
+  }
+
+  // Takes givens away (in symmetric pairs) while the puzzle keeps a unique
+  // solution and stays solvable with the level's techniques.
+  function sudokuPuzzle(rand, level) {
+    var target = SUDOKU_LEVELS[level];
+    var solution = sudokuSolution(rand);
+    var puzzle = solution.slice();
+    var clues = 81;
+    var cells = shuffled(Array.apply(null, Array(41)).map(function (_, i) { return i; }), rand);
+    for (var k = 0; k < cells.length && clues > target; k++) {
+      var a = cells[k];
+      var b = 80 - a;
+      var saved = [puzzle[a], puzzle[b]];
+      puzzle[a] = 0;
+      puzzle[b] = 0;
+      var ok = sudokuCount(puzzle.slice(), 2) === 1 &&
+        (level === "hard" || sudokuSinglesSolve(puzzle, level === "medium"));
+      if (ok) {
+        clues -= a === b ? 1 : 2;
+      } else {
+        puzzle[a] = saved[0];
+        puzzle[b] = saved[1];
+      }
+    }
+    // Hard: then single cells too, giving up symmetry for fewer givens.
+    if (level === "hard") {
+      shuffled(Array.apply(null, Array(81)).map(function (_, i) { return i; }), rand).forEach(function (i) {
+        if (!puzzle[i]) return;
+        var d = puzzle[i];
+        puzzle[i] = 0;
+        if (sudokuCount(puzzle.slice(), 2) !== 1) puzzle[i] = d;
+      });
+    }
+    return puzzle;
+  }
+
+  var sudokuCache = {};
+
+  function sudokuFor(seed, level) {
+    var key = seed + " " + level;
+    if (!sudokuCache[key]) {
+      var rand = seededRandom(key);
+      var puzzle = sudokuPuzzle(rand, level);
+      // A "hard" puzzle that the simple rules can still crack is redrawn
+      // (a few tries; random removal usually gets there).
+      for (var t = 0; level === "hard" && t < 20 && sudokuSinglesSolve(puzzle, true); t++) {
+        puzzle = sudokuPuzzle(rand, level);
+      }
+      sudokuCache[key] = puzzle;
+    }
+    return sudokuCache[key];
+  }
+
+  var SUDOKU_TEXT = {
+    ru: { title: "Судоку", easy: "лёгкий", medium: "средний", hard: "сложный" },
+    en: { title: "Sudoku", easy: "easy", medium: "medium", hard: "hard" },
+  };
+
+  function parseSudokuArgs(arg) {
+    var opts = { seed: "1", level: "medium", count: 1 };
+    var seedSet = false;
+    (arg || "").split(/\s+/).filter(Boolean).forEach(function (w) {
+      var lw = w.toLowerCase();
+      if (SUDOKU_LEVELS.hasOwnProperty(lw)) opts.level = lw;
+      else if (/^\d$/.test(w) && SUDOKU_COUNTS.indexOf(+w) !== -1) opts.count = +w;
+      else if (!seedSet) {
+        opts.seed = w;
+        seedSet = true;
+      }
+    });
+    return opts;
+  }
+
+  // All the page's puzzles in one SVG (90 units per grid), so they scale
+  // together to whatever room the page has.
+  function renderSudoku(arg) {
+    var opts = parseSudokuArgs(arg);
+    var txt = SUDOKU_TEXT[/^ru\b/i.test(uiLang()) ? "ru" : "en"];
+    var layout = SUDOKU_LAYOUT[opts.count];
+    var gap = 9;
+    var size = 90;
+    var svg = "";
+    for (var n = 0; n < opts.count; n++) {
+      var puzzle = sudokuFor(opts.seed + (n ? "-" + (n + 1) : ""), opts.level);
+      var ox = (n % layout[0]) * (size + gap);
+      var oy = Math.floor(n / layout[0]) * (size + gap);
+      var g = '<g transform="translate(' + ox + " " + oy + ')">';
+      for (var i = 0; i < 81; i++) {
+        if (!puzzle[i]) continue;
+        g += '<text x="' + ((i % 9) * 10 + 5) + '" y="' + (Math.floor(i / 9) * 10 + 5) + '">' + puzzle[i] + "</text>";
+      }
+      var thin = "";
+      var thick = "";
+      for (var k = 1; k < 9; k++) {
+        var line = '<path d="M' + k * 10 + " 0V90M0 " + k * 10 + 'H90"/>';
+        if (k % 3) thin += line;
+        else thick += line;
+      }
+      g += '<g class="sudoku-thin">' + thin + '</g><g class="sudoku-thick">' + thick +
+        '<rect width="90" height="90" fill="none"/></g>';
+      if (opts.count > 1) g += '<text class="sudoku-num" x="0" y="-2">' + (n + 1) + "</text>";
+      svg += g + "</g>";
+    }
+    var top = opts.count > 1 ? 5 : 1;
+    var w = layout[0] * size + (layout[0] - 1) * gap;
+    var h = layout[1] * size + (layout[1] - 1) * gap;
+    return presetBlock(
+      "sudoku",
+      '<div class="sudoku-title">' + txt.title + " · " + txt[opts.level] + " · " + escapeHtml(opts.seed) + "</div>" +
+        '<svg class="preset-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-1 ' + -top + " " + (w + 2) + " " + (h + top + 1) +
+        '" preserveAspectRatio="xMidYMin meet">' + svg + "</svg>"
+    );
+  }
+
   // --- 100 hours / 100 days tracker ---
   //
   // {{hours 2026-11-25 14:30 squares marks hints}}
@@ -489,6 +934,8 @@
     lines: renderLines,
     checklist: renderChecklist,
     wheel: renderWheel,
+    mandala: renderMandala,
+    sudoku: renderSudoku,
   };
 
   // The text a preset puts on a page (what "Apply preset" inserts).
@@ -511,6 +958,15 @@
     },
     wheel: function () {
       return "{{wheel " + defaultWheelLabels().join(", ") + "}}";
+    },
+    mandala: function () {
+      // A new random seed each time: every Apply draws a new mandala.
+      return "{{mandala " + (100000 + Math.floor(Math.random() * 900000)) + "}}";
+    },
+    sudoku: function () {
+      // A new seed each time, like the mandala; level and count from the panel.
+      return "{{sudoku " + (100000 + Math.floor(Math.random() * 900000)) + " " +
+        document.getElementById("sudoku-level").value + " " + document.getElementById("sudoku-count").value + "}}";
     },
     tracker: trackerDirective,
   };
@@ -536,8 +992,10 @@
   // picked. Hours take a date and time, days just a date; both default to
   // now until the user edits them (clearing one gives blank fields).
   function syncPresetOptions() {
-    var isTracker = document.getElementById("preset-select").value === "tracker";
-    document.getElementById("tracker-options").hidden = !isTracker;
+    var key = document.getElementById("preset-select").value;
+    document.getElementById("tracker-options").hidden = key !== "tracker";
+    document.getElementById("mandala-options").hidden = key !== "mandala";
+    document.getElementById("sudoku-options").hidden = key !== "sudoku";
     var hours = document.getElementById("tracker-unit").value === "hours";
     var timeInput = document.getElementById("tracker-start-time");
     var dateInput = document.getElementById("tracker-start-date");
@@ -751,6 +1209,7 @@
     SLOTS.forEach(function (slot) {
       renderCell(slot.side, slot.name);
     });
+    syncPresetSelect();
   }
 
   // --- Edit/render toggle: a cell shows its rendered view by default; the
@@ -766,6 +1225,9 @@
 
   function enterEditMode(side, name) {
     currentEditingSlot = { side: side, name: name };
+    // The page you click becomes the target of the Preset panel too.
+    selectPage(side, name);
+    syncPresetSelect();
     cellEl(side, name).closest(".cell-inner").classList.add("editing");
   }
 
@@ -775,6 +1237,7 @@
     }
     renderCell(side, name);
     cellEl(side, name).closest(".cell-inner").classList.remove("editing");
+    syncPresetSelect();
   }
 
   // The rendered view is a plain, non-focusable div, so a click on it can't
@@ -785,48 +1248,77 @@
     cellEl(side, name).focus();
   }
 
-  // --- Staging area: a normal, unrotated textarea for comfortable typing ---
+  // --- Selected page: the last page clicked. Presets and the formatting
+  // buttons (when no page is open) work on it; it gets a highlight ring
+  // and its number shows in the Preset panel's heading.
 
-  function stagingCellEl() {
-    return document.getElementById("staging-cell");
+  var selected = { side: "front", name: "B1" };
+
+  function selectedSlot() {
+    return selected;
   }
 
-  function stagingTextEl() {
-    return document.getElementById("staging-text");
+  function pageLabel(slot) {
+    return "page " + PAGE_NUMBERS[slot.side][slot.name];
   }
 
-  // The <select> value is "side:name", e.g. "front:A1" or "back:B1".
-  function stagingSlot() {
-    var parts = stagingCellEl().value.split(":");
-    return { side: parts[0], name: parts[1] };
+  function selectPage(side, name) {
+    selected = { side: side, name: name };
+    document.querySelectorAll(".cell.selected").forEach(function (el) {
+      el.classList.remove("selected");
+    });
+    cellEl(side, name).closest(".cell").classList.add("selected");
+    document.getElementById("preset-target").textContent = "· " + pageLabel(selected);
   }
 
-  function refreshStaging() {
-    var slot = stagingSlot();
-    stagingTextEl().value = cellEl(slot.side, slot.name).value;
-  }
-
-  function applyStagingToCell() {
-    var slot = stagingSlot();
-    cellEl(slot.side, slot.name).value = stagingTextEl().value;
-    renderCell(slot.side, slot.name);
-  }
-
-  // Replaces the staging-selected page's text with the chosen preset.
+  // Replaces the selected page's text with the chosen preset.
+  // There is no Apply button: picking a preset (or changing its options)
+  // puts it on the selected page right away. A page holding nothing but a
+  // preset line is replaced without asking, so trying presets or tweaking
+  // tracker options doesn't nag; for a page with text of its own, the View
+  // panel's "Ask before replacing text" decides.
   function applyPresetToCell() {
     var key = document.getElementById("preset-select").value;
     if (!PRESETS[key]) return;
-    var slot = stagingSlot();
+    var slot = selectedSlot();
     var el = cellEl(slot.side, slot.name);
-    var pageLabel = stagingCellEl().selectedOptions[0].text;
-    if (el.value.trim() && !confirm("Replace the current text on " + pageLabel + " with this preset?")) return;
+    var onlyPreset = DIRECTIVE_RE.test(el.value.trim());
+    if (el.value.trim() && !onlyPreset && document.getElementById("ask-replace").checked &&
+        !confirm("Replace the current text on " + pageLabel(slot) + " with this preset?")) {
+      syncPresetSelect();
+      return;
+    }
     el.value = PRESETS[key]();
     renderCell(slot.side, slot.name);
-    refreshStaging();
   }
 
-  // --- Formatting buttons: wrap the selection in the textarea being typed
-  // in (a page mid-edit, or the panel's), e.g. "**" ... "**" or
+  // Which preset (if any) the page's text is: the preset menu shows it, so
+  // picking any other entry is a change, and so applies.
+  var DIRECTIVE_PRESET = { hours: "tracker", days: "tracker" };
+
+  function presetKeyOf(text) {
+    var m = DIRECTIVE_RE.exec(text.trim());
+    if (!m) return "";
+    var name = m[1].toLowerCase();
+    return DIRECTIVE_PRESET[name] || (PRESETS[name] ? name : "");
+  }
+
+  function syncPresetSelect() {
+    var slot = selectedSlot();
+    var text = cellEl(slot.side, slot.name).value;
+    var key = presetKeyOf(text);
+    document.getElementById("preset-select").value = key;
+    // Show the page's own sudoku settings.
+    if (key === "sudoku") {
+      var opts = parseSudokuArgs(DIRECTIVE_RE.exec(text.trim())[2]);
+      document.getElementById("sudoku-level").value = opts.level;
+      document.getElementById("sudoku-count").value = String(opts.count);
+    }
+    syncPresetOptions();
+  }
+
+  // --- Formatting buttons: wrap the selection in the page being edited
+  // (or, if none is, the last page clicked), e.g. "**" ... "**" or
   // "{red}" ... "{/red}". With nothing selected, insert an empty pair with
   // the cursor inside it.
   function wrapSelection(open, close) {
@@ -838,9 +1330,11 @@
   }
 
   function editTarget() {
-    return currentEditingSlot
-      ? cellEl(currentEditingSlot.side, currentEditingSlot.name)
-      : stagingTextEl();
+    if (!currentEditingSlot) {
+      var slot = selectedSlot();
+      focusCellForEditing(slot.side, slot.name);
+    }
+    return cellEl(currentEditingSlot.side, currentEditingSlot.name);
   }
 
   // Replaces ta's [start, end) with text, keeping undo history where the
@@ -907,7 +1401,6 @@
     if (inner && !inner.classList.contains("editing")) {
       var slot = slotOfCell(ta);
       renderCell(slot.side, slot.name);
-      refreshStaging();
     }
   }
 
@@ -1064,10 +1557,10 @@
       imageInput.value = "";
     });
 
-    // Paste (Ctrl+V) a picture into any textarea: the panel's or a page's.
-    var textareas = [stagingTextEl()].concat(SLOTS.map(function (s) {
+    // Paste (Ctrl+V) a picture into a page being edited.
+    var textareas = SLOTS.map(function (s) {
       return cellEl(s.side, s.name);
-    }));
+    });
     textareas.forEach(function (ta) {
       ta.addEventListener("paste", function (e) {
         var files = imageFiles(e.clipboardData && e.clipboardData.files);
@@ -1077,12 +1570,12 @@
       });
     });
 
-    // Drop picture files onto a page (added at the end of its text) or onto
-    // a textarea (added at the cursor).
+    // Drop picture files onto a page: added at the cursor if the page is
+    // being edited, otherwise at the end of its text.
     function hasFiles(e) {
       return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, "Files") !== -1;
     }
-    document.querySelectorAll(".cell, #staging-text").forEach(function (el) {
+    document.querySelectorAll(".cell").forEach(function (el) {
       el.addEventListener("dragover", function (e) {
         if (!hasFiles(e)) return;
         e.preventDefault();
@@ -1096,19 +1589,12 @@
         var files = imageFiles(e.dataTransfer && e.dataTransfer.files);
         if (!files.length) return;
         e.preventDefault();
-        var ta = el.tagName === "TEXTAREA" ? el : el.querySelector("textarea");
-        var editing = ta.closest(".cell-inner") && ta.closest(".cell-inner").classList.contains("editing");
-        var pos = ta === stagingTextEl() || editing ? ta.selectionStart : ta.value.length;
+        var ta = el.querySelector("textarea");
+        var editing = ta.closest(".cell-inner").classList.contains("editing");
+        var pos = editing ? ta.selectionStart : ta.value.length;
         insertImages(ta, pos, files);
       });
     });
-
-    var sheetView = document.getElementById("sheet-view");
-    function syncSheetView() {
-      document.body.classList.toggle("sheet-view", sheetView.checked);
-    }
-    sheetView.addEventListener("change", syncSheetView);
-    syncSheetView();
 
     var zoom = document.getElementById("zoom-select");
     var savedZoom = readPref("zoom");
@@ -1250,7 +1736,6 @@
         cellEl(slot.side, slot.name).value = sections[page] || "";
       });
       renderAllCells();
-      refreshStaging();
       if (parsed.duplicates.length) {
         alert(
           "Some page numbers appear more than once: " +
@@ -1282,6 +1767,23 @@
     // attribute, so the display could otherwise start out of sync with
     // whatever the checkbox actually shows.
     syncPageNumberVisibility();
+
+    // Without the back side, pages 9-16 are hidden on screen and not
+    // printed (one A4 page). Their text is kept, and Export MD still saves it.
+    var showBack = document.getElementById("show-back");
+    if (readPref("showBack") === "0") showBack.checked = false;
+    function syncBackSide() {
+      document.body.classList.toggle("no-back", !showBack.checked);
+      if (!showBack.checked && selected.side === "back") {
+        selectPage("front", "B1");
+        syncPresetSelect();
+      }
+    }
+    showBack.addEventListener("change", function () {
+      writePref("showBack", showBack.checked ? "1" : "0");
+      syncBackSide();
+    });
+    syncBackSide();
 
     SLOTS.forEach(function (slot) {
       cellEl(slot.side, slot.name).addEventListener("focus", function () {
@@ -1323,20 +1825,33 @@
       mdInput.value = "";
     });
 
-    stagingCellEl().addEventListener("change", refreshStaging);
-    document.getElementById("btn-staging-apply").addEventListener("click", function () {
-      applyStagingToCell();
-      refreshStaging();
+    document.getElementById("preset-select").addEventListener("change", function () {
+      syncPresetOptions();
+      applyPresetToCell();
     });
-    document.getElementById("btn-preset-apply").addEventListener("click", applyPresetToCell);
-    document.getElementById("preset-select").addEventListener("change", syncPresetOptions);
-    document.getElementById("tracker-unit").addEventListener("change", syncPresetOptions);
+    selectPage(selected.side, selected.name);
+    document.getElementById("btn-new-mandala").addEventListener("click", applyPresetToCell);
+    document.getElementById("btn-new-sudoku").addEventListener("click", applyPresetToCell);
+    ["sudoku-level", "sudoku-count"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", applyPresetToCell);
+    });
     ["tracker-start-time", "tracker-start-date"].forEach(function (id) {
       document.getElementById(id).addEventListener("input", function (e) {
         e.target.dataset.touched = "1";
       });
     });
-    syncPresetOptions();
+    // Tracker options re-apply the tracker as they change.
+    ["tracker-unit", "tracker-shape", "tracker-start-time", "tracker-start-date", "tracker-marks", "tracker-hints"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", function () {
+        syncPresetOptions();
+        applyPresetToCell();
+      });
+    });
+    var askReplace = document.getElementById("ask-replace");
+    if (readPref("askReplace") === "0") askReplace.checked = false;
+    askReplace.addEventListener("change", function () {
+      writePref("askReplace", askReplace.checked ? "1" : "0");
+    });
     initChrome();
 
     loadDemo();

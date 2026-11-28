@@ -27,7 +27,7 @@ column (A2, B2, C2, D2) is rotated 270°.
 
 On screen the editor shows the 16 pages upright, in reading order: front
 side (pages 1-8), then back side (pages 9-16). The rotated sheet layout is
-used only for printing (and by the **Sheet layout** toggle) — see
+used only for printing — see
 "Double-sided printing" below for how to get content onto both sides of
 one physical sheet, and how the two sides line up once folded.
 
@@ -40,18 +40,17 @@ build step, no network access.
 - Every page shows its **rendered** view by default (bold/italic/lists/
   dividers as real formatting, not raw markdown). Click a page to edit its
   raw text; click anywhere else (or another page) to render it again.
-- The **Page** panel on the left is a roomier place to type: pick a page
-  (it loads that page's current text), edit normally, then click **Insert
-  into page** to push it back in.
-- The formatting buttons above the panel's text box (bold, italic, bullet
-  list, numbered list, divider, table, picture, colors) apply to the page being edited, or
-  to the Page panel if no page is open. The list buttons toggle: pressed on
+- The **Format** panel's buttons (bold, italic, bullet list, numbered
+  list, divider, table, picture, colors) apply to the page being edited,
+  or, if none is open, to the last page clicked. The list buttons toggle: pressed on
   lines that are already that kind of list, they turn them back into plain
   lines.
 - **Show page numbers** toggles the small printed page number on every page.
   Unchecked, it's hidden and that space is freed up for content instead.
-- **Sheet layout** shows the pages as they land on the printed sheet
-  (rotated, out of order); **Zoom** scales the on-screen pages.
+- **Back side (pages 9-16)** unchecked hides the back side on screen and
+  leaves it out of printing (one A4 page). Its text is kept, and Export MD
+  still saves it.
+- **Zoom** scales the on-screen pages.
 - The **Help · Справка** tab explains all of this in Russian and English,
   including how to fold the printed sheet.
 - **Export MD** downloads all 16 pages as a single `content.md`, one `## 1`
@@ -89,9 +88,12 @@ rendered at print time:
 
 ### Page presets
 
-Pick a page in the Page panel, choose a **Preset** and click **Apply** to
-fill that page with a ready-made layout (it asks first if the page already
-has text). A preset is just one directive line in the page's text, so it is
+Click a page (it gets highlighted, and its number shows in the Preset
+panel's heading), choose a **Preset**, and it fills that page with a ready-made layout right
+away; changing a preset's options updates the page too. A page with text
+of its own is replaced only after a confirmation (unless **Ask before a
+preset replaces text** in the View panel is unchecked); a page holding
+only a preset line is swapped without asking. A preset is just one directive line in the page's text, so it is
 saved by Export MD, loaded by Import MD and can be edited by hand:
 
 | Preset | Directive |
@@ -102,6 +104,8 @@ saved by Export MD, loaded by Import MD and can be edited by hand:
 | Lined, 7mm | `{{lines}}` |
 | Checklist | `{{checklist}}` |
 | Wheel of life | `{{wheel Health, Career, Money, ...}}` (3+ comma-separated areas) |
+| Sudoku | `{{sudoku 483920 medium 4}}` (seed; `easy` / `medium` / `hard`; 1, 2, 4 or 6 per page; always one solution) |
+| Mandala to color | `{{mandala 483920}}` (the number seeds the pattern; **New mandala** picks a new one; the title shows it) |
 | 100 hours | `{{hours 2026-11-25 14:30 squares marks hints}}` |
 | 100 days | `{{days 2026-11-25 circles marks}}` |
 

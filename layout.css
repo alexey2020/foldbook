@@ -325,6 +325,72 @@ body {
   fill: #222;
 }
 
+/* Mandala to color: its title (with the seed), then the drawing. */
+.cell-content .preset-mandala {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-content .mandala-title {
+  flex: 0 0 auto;
+  font-weight: bold;
+  font-size: 3.4mm;
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+.cell-content .preset-mandala .preset-svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+/* Sudoku: a title (level, seed), then the puzzles in one SVG, 10 units a
+   cell. */
+.cell-content .preset-sudoku {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-content .sudoku-title {
+  flex: 0 0 auto;
+  font-weight: bold;
+  font-size: 3.4mm;
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+.cell-content .preset-sudoku .preset-svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+.cell-content .preset-sudoku text {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6.4px;
+  fill: #222;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.cell-content .preset-sudoku .sudoku-num {
+  font-size: 4px;
+  fill: #888;
+  text-anchor: start;
+  dominant-baseline: auto;
+}
+
+.cell-content .sudoku-thin {
+  stroke: #9a9a9a;
+  stroke-width: 0.35;
+}
+
+.cell-content .sudoku-thick {
+  stroke: #222;
+  stroke-width: 1;
+}
+
 /* 100 hours / 100 days tracker: Start/End fields, then a 10 x 10 grid (one
    cell per hour or day) to shade in with a pencil. The SVG uses ~mm
    viewBox units. */
