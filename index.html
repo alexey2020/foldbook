@@ -22,7 +22,7 @@
     </div>
     <nav class="tabs" role="tablist">
       <button class="tab active" type="button" role="tab" data-tab="editor" aria-selected="true">Editor</button>
-      <button class="tab" type="button" role="tab" data-tab="help" aria-selected="false">Help · Справка</button>
+      <button class="tab" type="button" role="tab" data-tab="help" aria-selected="false">Help</button>
     </nav>
     <div class="actions">
       <button id="btn-demo" class="btn btn-ghost" type="button">Load demo</button>
@@ -30,6 +30,11 @@
       <button id="btn-import-md" class="btn" type="button">Import MD</button>
       <button id="btn-export-md" class="btn" type="button">Export MD</button>
       <button id="btn-print" class="btn btn-primary" type="button">Print / Save PDF</button>
+      <select id="site-lang" class="lang-select" aria-label="Language">
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+        <option value="eo">Esperanto</option>
+      </select>
       <input id="file-import-md" type="file" accept=".md,text/markdown" hidden>
     </div>
   </header>
@@ -266,12 +271,7 @@
   </main>
 
   <section id="tab-help" class="tab-panel help no-print" hidden>
-    <div class="help-lang" role="group" aria-label="Language">
-      <button type="button" class="lang-btn" data-lang="ru">Русский</button>
-      <button type="button" class="lang-btn" data-lang="en">English</button>
-    </div>
-
-    <article class="help-body" lang="ru" data-lang="ru">
+    <article class="help-body" lang="ru" data-lang="ru" hidden>
       <h1>Как пользоваться Foldlet</h1>
       <p class="lead">Foldlet превращает один лист A4 в карманную книжечку: 8 маленьких страниц на одной стороне, 16 — если печатать с двух сторон. Всё работает прямо в браузере, ничего никуда не отправляется.</p>
 
@@ -279,16 +279,17 @@
       <ol>
         <li>Щёлкните по странице и пишите прямо на ней.</li>
         <li>Панель слева — кнопки оформления, цвета и готовые шаблоны страниц.</li>
-        <li>Нажмите <b>Print / Save PDF</b>, распечатайте и сложите лист (см. ниже).</li>
+        <li>Нажмите <b>Печать / PDF</b>, распечатайте и сложите лист (см. ниже).</li>
       </ol>
 
       <h2>Редактирование</h2>
       <ul>
         <li>Страницы показаны по порядку чтения, 1–16. Щелчок по странице открывает её исходный текст, щелчок мимо — показывает результат.</li>
-        <li>Кнопки панели <b>Format</b> работают на открытой странице, а если ни одна не открыта — на последней, по которой вы щёлкнули.</li>
+        <li>Кнопки панели <b>Оформление</b> работают на открытой странице, а если ни одна не открыта — на последней, по которой вы щёлкнули.</li>
         <li>На печатном листе страницы будут повёрнуты и идут не по порядку. Так и задумано: после складывания они встанут правильно.</li>
-        <li><b>Show page numbers</b> прячет или показывает номера страниц; без номеров на странице чуть больше места.</li>
-        <li>Снимите <b>Back side (pages 9–16)</b>, если нужна книжечка на 8 страниц: оборотная сторона пропадёт с экрана и из печати. Её текст не теряется и вернётся, если поставить галочку снова.</li>
+        <li><b>Номера страниц</b> прячет или показывает номера страниц; без номеров на странице чуть больше места.</li>
+        <li>Снимите <b>Оборотная сторона (стр. 9–16)</b>, если нужна книжечка на 8 страниц: оборотная сторона пропадёт с экрана и из печати. Её текст не теряется и вернётся, если поставить галочку снова.</li>
+        <li>Язык сайта выбирается в правом верхнем углу: English, Русский или Esperanto. Он меняет и слова, которые печатают шаблоны: названия месяцев, заголовки.</li>
       </ul>
 
       <h2>Оформление текста</h2>
@@ -303,7 +304,7 @@
         <tr><td><code>| a | b |</code></td><td>таблица (см. ниже)</td></tr>
         <tr><td><code>![подпись][img-1]</code></td><td>картинка (см. ниже)</td></tr>
       </table>
-      <p>Цвета: <span class="ink-red">red</span>, <span class="ink-orange">orange</span>, <span class="ink-yellow">yellow</span>, <span class="ink-green">green</span>, <span class="ink-blue">blue</span>, <span class="ink-purple">purple</span>, <span class="ink-pink">pink</span>, <span class="ink-gray">gray</span>. Цвет действует в пределах одной строки и сочетается с жирным: <code>**{blue}Заголовок{/blue}**</code>. Кнопки над полем текста в панели делают всё то же самое: <b>B</b> и <i>I</i> оборачивают выделенный текст, кнопки списков превращают выделенные строки в маркированный или нумерованный список (повторное нажатие убирает его), кнопка разделителя вставляет строку <code>---</code>, кнопки таблицы и картинки вставляют таблицу и картинку, цветные кружки красят выделенное. Кнопки работают со страницей, которую вы сейчас редактируете, а если такой нет — с полем в панели.</p>
+      <p>Цвета: <span class="ink-red">red</span>, <span class="ink-orange">orange</span>, <span class="ink-yellow">yellow</span>, <span class="ink-green">green</span>, <span class="ink-blue">blue</span>, <span class="ink-purple">purple</span>, <span class="ink-pink">pink</span>, <span class="ink-gray">gray</span>. Цвет действует в пределах одной строки и сочетается с жирным: <code>**{blue}Заголовок{/blue}**</code>. Кнопки панели <b>Оформление</b> делают всё то же самое: <b>B</b> и <i>I</i> оборачивают выделенный текст, кнопки списков превращают выделенные строки в маркированный или нумерованный список (повторное нажатие убирает его), кнопка разделителя вставляет строку <code>---</code>, кнопки таблицы и картинки вставляют таблицу и картинку, цветные кружки красят выделенное. Кнопки работают со страницей, которую вы сейчас редактируете, а если ни одна не открыта — с последней, по которой вы щёлкнули.</p>
 
       <h2>Таблицы</h2>
       <p>Каждая строка таблицы начинается с <code>|</code>, ячейки разделяются <code>|</code>. Если вторая строка состоит из чёрточек (<code>|---|---|</code>), первая становится шапкой. Двоеточия в строке чёрточек выравнивают колонку: <code>:---</code> влево, <code>:---:</code> по центру, <code>---:</code> вправо. В ячейках работают жирный, курсив и цвета. Кнопка таблицы в панели вставляет заготовку.</p>
@@ -318,11 +319,11 @@
         <li>Картинка из интернета: <code>![](https://адрес/картинки.jpg)</code> — нужен интернет при печати.</li>
         <li>Картинка занимает строку целиком, растягивается не шире страницы и ужимается, если не помещается по высоте.</li>
         <li>Большие фото автоматически уменьшаются до размера, достаточного для печати.</li>
-        <li><b>Export MD</b> сохраняет картинки в тот же файл, в конец, и <b>Import MD</b> загружает их обратно.</li>
+        <li><b>Экспорт MD</b> сохраняет картинки в тот же файл, в конец, и <b>Импорт MD</b> загружает их обратно.</li>
       </ul>
 
       <h2>Шаблоны страниц</h2>
-      <p>Щёлкните по странице (она подсветится, а её номер появится в заголовке панели <b>Preset</b>), затем выберите шаблон — он сразу появится на странице. Если на странице уже есть свой текст, Foldlet спросит, заменить ли его (галочка <b>Ask before a preset replaces text</b> в панели View); страницу, на которой только шаблон, он меняет без вопросов. Выбор в списке остаётся, когда вы переходите на страницу без шаблона: чтобы поставить тот же шаблон и туда, нажмите <b>Apply to page N</b>. Шаблон — это одна строка в тексте страницы; её можно поправить вручную, и она сохраняется в .md.</p>
+      <p>Щёлкните по странице (она подсветится, а её номер появится в заголовке панели <b>Шаблон</b>), затем выберите шаблон — он сразу появится на странице. Если на странице уже есть свой текст, Foldlet спросит, заменить ли его (галочка <b>Спрашивать перед заменой текста шаблоном</b> в панели «Вид»); страницу, на которой только шаблон, он меняет без вопросов. Выбор в списке остаётся, когда вы переходите на страницу без шаблона: чтобы поставить тот же шаблон и туда, нажмите <b>Применить к стр. N</b>. Шаблон — это одна строка в тексте страницы; её можно поправить вручную, и она сохраняется в .md.</p>
       <table>
         <tr><th>Шаблон</th><th>Строка</th></tr>
         <tr><td>Календарь</td><td><code>{{calendar 2026-11 month mon}}</code>. Вид: <code>month</code> (месяц), <code>3months</code> (прошлый, этот и следующий), <code>week</code> (неделя, по строке на день; дата — любой её день, <code>2026-11-25</code>), <code>year</code> (год, <code>2026</code>). <code>mon</code> или <code>sun</code> — с какого дня начинается неделя. Без даты — сегодня</td></tr>
@@ -331,9 +332,9 @@
         <tr><td>Линейка 7 мм</td><td><code>{{lines}}</code></td></tr>
         <tr><td>Чек-лист</td><td><code>{{checklist}}</code></td></tr>
         <tr><td>Колесо баланса</td><td><code>{{wheel Здоровье, Работа, Деньги, ...}}</code></td></tr>
-        <tr><td>Судоку</td><td><code>{{sudoku 483920 medium 4}}</code> — номер-seed, уровень (<code>easy</code>, <code>medium</code>, <code>hard</code>) и сколько штук на странице (1, 2, 4 или 6). У каждой ровно одно решение. Кнопка <b>New sudoku</b> даёт новые</td></tr>
+        <tr><td>Судоку</td><td><code>{{sudoku 483920 medium 4}}</code> — номер-seed, уровень (<code>easy</code>, <code>medium</code>, <code>hard</code>) и сколько штук на странице (1, 2, 4 или 6). У каждой ровно одно решение. Кнопка <b>Новое судоку</b> даёт новые</td></tr>
         <tr><td>Yatzy</td><td><code>{{yatzy 4}}</code> — бланк для записи очков, 1–6 игроков; у каждой строки мелко подсказано, как она считается</td></tr>
-        <tr><td>Мандала-раскраска</td><td><code>{{mandala 483920}}</code> — число задаёт рисунок: кнопка <b>New mandala</b> рисует новую, а понравившуюся можно сохранить, оставив число</td></tr>
+        <tr><td>Мандала-раскраска</td><td><code>{{mandala 483920}}</code> — число задаёт рисунок: кнопка <b>Новая мандала</b> рисует новую, а понравившуюся можно сохранить, оставив число</td></tr>
         <tr><td>100 часов</td><td><code>{{hours 2026-11-25 14:30 squares marks hints}}</code></td></tr>
         <tr><td>100 дней</td><td><code>{{days 2026-11-25 circles marks hints}}</code></td></tr>
       </table>
@@ -342,13 +343,13 @@
 
       <h2>Файлы</h2>
       <ul>
-        <li><b>Export MD</b> сохраняет все 16 страниц в один файл <code>content.md</code>, страницы разделены заголовками <code>## 1</code> … <code>## 16</code>.</li>
-        <li><b>Import MD</b> загружает такой файл обратно. Страницы без заголовка останутся пустыми; если номер повторяется, Foldlet предупредит.</li>
-        <li>Содержимое не сохраняется само: перед закрытием вкладки сделайте Export MD.</li>
+        <li><b>Экспорт MD</b> сохраняет все 16 страниц в один файл <code>content.md</code>, страницы разделены заголовками <code>## 1</code> … <code>## 16</code>.</li>
+        <li><b>Импорт MD</b> загружает такой файл обратно. Страницы без заголовка останутся пустыми; если номер повторяется, Foldlet предупредит.</li>
+        <li>Содержимое не сохраняется само: перед закрытием вкладки сделайте «Экспорт MD».</li>
       </ul>
 
       <h2>Печать</h2>
-      <p>Нажмите <b>Print / Save PDF</b> и в окне печати выберите:</p>
+      <p>Нажмите <b>Печать / PDF</b> и в окне печати выберите:</p>
       <ul>
         <li>Бумага: <b>A4</b>, поля: <b>Нет</b>, масштаб: <b>100%</b>;</li>
         <li>отключите колонтитулы, включите <b>Фоновая графика</b> — иначе не напечатаются линии сгиба.</li>
@@ -383,6 +384,7 @@
         <li>On the printed sheet the pages are rotated and out of order. That's expected; folding puts them in order.</li>
         <li><b>Show page numbers</b> hides or shows the page numbers; without them each page has a little more room.</li>
         <li>Uncheck <b>Back side (pages 9–16)</b> for an 8-page booklet: the back side disappears from the screen and from printing. Its text is kept and comes back when you check the box again.</li>
+        <li>Pick the site language at the top right: English, Русский or Esperanto. It also sets the words presets print: month names, titles.</li>
       </ul>
 
       <h2>Formatting</h2>
@@ -397,7 +399,7 @@
         <tr><td><code>| a | b |</code></td><td>a table (see below)</td></tr>
         <tr><td><code>![caption][img-1]</code></td><td>a picture (see below)</td></tr>
       </table>
-      <p>Colors: <span class="ink-red">red</span>, <span class="ink-orange">orange</span>, <span class="ink-yellow">yellow</span>, <span class="ink-green">green</span>, <span class="ink-blue">blue</span>, <span class="ink-purple">purple</span>, <span class="ink-pink">pink</span>, <span class="ink-gray">gray</span>. A color works within one line and combines with bold: <code>**{blue}Title{/blue}**</code>. The buttons above the text box in the panel do all of this for you: <b>B</b> and <i>I</i> wrap the selected text, the list buttons turn the selected lines into a bullet or numbered list (press again to undo it), the divider button inserts a <code>---</code> line, the table and picture buttons insert a table or a picture, and the color dots color the selection. They work on the page you're editing, or on the panel's text box if no page is open.</p>
+      <p>Colors: <span class="ink-red">red</span>, <span class="ink-orange">orange</span>, <span class="ink-yellow">yellow</span>, <span class="ink-green">green</span>, <span class="ink-blue">blue</span>, <span class="ink-purple">purple</span>, <span class="ink-pink">pink</span>, <span class="ink-gray">gray</span>. A color works within one line and combines with bold: <code>**{blue}Title{/blue}**</code>. The <b>Format</b> panel's buttons do all of this for you: <b>B</b> and <i>I</i> wrap the selected text, the list buttons turn the selected lines into a bullet or numbered list (press again to undo it), the divider button inserts a <code>---</code> line, the table and picture buttons insert a table or a picture, and the color dots color the selection. They work on the page you're editing, or, if none is open, on the last page you clicked.</p>
 
       <h2>Tables</h2>
       <p>Every table line starts with <code>|</code>, with <code>|</code> between cells. If the second line is dashes (<code>|---|---|</code>), the first line becomes the header. Colons in the dash line align a column: <code>:---</code> left, <code>:---:</code> center, <code>---:</code> right. Bold, italic and colors work inside cells. The table button in the panel inserts a starter table.</p>
@@ -458,8 +460,105 @@
         <li>Push the top and bottom ends toward the middle: the cut opens into a diamond. Push all the way and fold the booklet so page 1 is the cover.</li>
       </ol>
     </article>
+
+    <article class="help-body" lang="eo" data-lang="eo" hidden>
+      <h1>Kiel uzi Foldlet</h1>
+      <p class="lead">Foldlet faras el unu A4-folio poŝan libreton: 8 malgrandajn paĝojn sur unu flanko, 16 se vi presas sur ambaŭ flankoj. Ĉio funkcias en via retumilo; nenio estas sendata ien ajn.</p>
+
+      <h2>Rapida komenco</h2>
+      <ol>
+        <li>Alklaku paĝon kaj tajpu rekte sur ĝi.</li>
+        <li>La panelo maldekstre havas butonojn por formatado, kolorojn kaj pretajn ŝablonojn de paĝoj.</li>
+        <li>Alklaku <b>Presi / PDF</b>, presu kaj faldu la folion (vidu sube).</li>
+      </ol>
+
+      <h2>Redaktado</h2>
+      <ul>
+        <li>La paĝoj estas montrataj laŭ la legordo, 1–16. Alklaku paĝon por vidi ĝian fontan tekston; alklaku aliloke por vidi la rezulton.</li>
+        <li>La butonoj de <b>Formato</b> agas sur la redaktata paĝo aŭ, se neniu estas malfermita, sur la laste alklakita.</li>
+        <li>Sur la presita folio la paĝoj estas turnitaj kaj ne laŭorde. Tiel devas esti: la faldado metas ilin en ordon.</li>
+        <li><b>Montri paĝnumerojn</b> kaŝas aŭ montras la paĝnumerojn; sen ili ĉiu paĝo havas iom pli da spaco.</li>
+        <li>Malmarku <b>Dorsa flanko (paĝoj 9–16)</b> por 8-paĝa libreto: la dorsa flanko malaperas de la ekrano kaj el la presado. Ĝia teksto restas kaj revenas, kiam vi remarkas la skatolon.</li>
+        <li>Elektu la lingvon de la retejo supre dekstre: English, Русский aŭ Esperanto. Ĝi ŝanĝas ankaŭ la vortojn, kiujn presas la ŝablonoj: nomojn de monatoj, titolojn.</li>
+      </ul>
+
+      <h2>Formatado</h2>
+      <table>
+        <tr><th>Vi tajpas</th><th>Vi ricevas</th></tr>
+        <tr><td><code>**grasa**</code></td><td><b>grasa</b></td></tr>
+        <tr><td><code>*kursiva*</code> aŭ <code>_kursiva_</code></td><td><i>kursiva</i></td></tr>
+        <tr><td><code>- ero</code></td><td>bula listo</td></tr>
+        <tr><td><code>1. ero</code></td><td>numerita listo</td></tr>
+        <tr><td><code>---</code> sur aparta linio</td><td>dividas la paĝon en egale altajn partojn</td></tr>
+        <tr><td><code>{red}teksto{/red}</code></td><td><span class="ink-red">kolora teksto</span></td></tr>
+        <tr><td><code>| a | b |</code></td><td>tabelo (vidu sube)</td></tr>
+        <tr><td><code>![subskribo][img-1]</code></td><td>bildo (vidu sube)</td></tr>
+      </table>
+      <p>Koloroj: <span class="ink-red">red</span>, <span class="ink-orange">orange</span>, <span class="ink-yellow">yellow</span>, <span class="ink-green">green</span>, <span class="ink-blue">blue</span>, <span class="ink-purple">purple</span>, <span class="ink-pink">pink</span>, <span class="ink-gray">gray</span>. Koloro validas ene de unu linio kaj kombiniĝas kun grasa: <code>**{blue}Titolo{/blue}**</code>. La butonoj de la panelo <b>Formato</b> faras ĉion ĉi por vi: <b>B</b> kaj <i>I</i> ĉirkaŭas la elektitan tekston, la listaj butonoj faras el la elektitaj linioj bulan aŭ numeritan liston (premu denove por malfari ĝin), la dividila butono enmetas linion <code>---</code>, la tabela kaj la bilda butonoj enmetas tabelon aŭ bildon, kaj la koloraj punktoj kolorigas la elektitaĵon. Ili agas sur la redaktata paĝo aŭ, se neniu estas malfermita, sur la laste alklakita.</p>
+
+      <h2>Tabeloj</h2>
+      <p>Ĉiu linio de tabelo komenciĝas per <code>|</code>, kun <code>|</code> inter la ĉeloj. Se la dua linio konsistas el streketoj (<code>|---|---|</code>), la unua linio fariĝas kaplinio. Dupunktoj en la streketa linio ĝisrandigas kolumnon: <code>:---</code> maldekstren, <code>:---:</code> centren, <code>---:</code> dekstren. Grasa, kursiva kaj koloroj funkcias en la ĉeloj. La tabela butono en la panelo enmetas komencan tabelon.</p>
+<pre><code>| Aĵo    | Kiom | ✓ |
+|:-------|:----:|---|
+| Teo    | 2    |   |</code></pre>
+
+      <h2>Bildoj</h2>
+      <ul>
+        <li>Uzu la bildan butonon en la panelo, algluu per <b>Ctrl+V</b> aŭ demetu dosieron sur paĝon.</li>
+        <li>La paĝo ricevas linion kiel <code>![][img-1]</code>: referencon al la bildo. En la krampoj vi povas skribi subskribon por vi mem: <code>![kato][img-1]</code>.</li>
+        <li>Bildo el la reto: <code>![](https://adreso/de/bildo.jpg)</code> (bezonas interreton dum presado).</li>
+        <li>Bildo okupas tutan linion, neniam estas pli larĝa ol la paĝo kaj malgrandiĝas, se ĝi ne eniras laŭ la alto.</li>
+        <li>Grandaj fotoj aŭtomate malgrandiĝas al grandeco, kiu ankoraŭ bone sufiĉas por presado.</li>
+        <li><b>Eksporti MD</b> konservas la bildojn en la saman dosieron, ĉe la fino, kaj <b>Importi MD</b> reŝargas ilin.</li>
+      </ul>
+
+      <h2>Ŝablonoj de paĝoj</h2>
+      <p>Alklaku paĝon (ĝi estas emfazita, kaj ĝia numero aperas en la titolo de la panelo <b>Ŝablono</b>), poste elektu aranĝon: ĝi tuj aperas sur la paĝo. Se la paĝo havas propran tekston, Foldlet demandas antaŭ ol anstataŭigi ĝin (la skatolo <b>Demandi antaŭ ol ŝablono anstataŭigas tekston</b> en la panelo Vido); paĝon kun nur ŝablono ĝi ŝanĝas sen demando. La elekto restas, kiam vi iras al paĝo sen ŝablono: premu <b>Apliki al paĝo N</b> por meti la saman ankaŭ tien. Ŝablono estas unu linio en la teksto de la paĝo: vi povas redakti ĝin mane, kaj ĝi konserviĝas en la .md.</p>
+      <table>
+        <tr><th>Ŝablono</th><th>Linio</th></tr>
+        <tr><td>Kalendaro</td><td><code>{{calendar 2026-11 month mon}}</code>. Vido: <code>month</code> (monato), <code>3months</code> (la antaŭa, ĉi tiu kaj la sekva), <code>week</code> (semajno, po linio por tago; la dato estas iu ajn tago de ĝi, <code>2026-11-25</code>), <code>year</code> (jaro, <code>2026</code>). <code>mon</code> aŭ <code>sun</code>: la unua tago de la semajno. Sen dato: hodiaŭ</td></tr>
+        <tr><td>Krado, 5 mm</td><td><code>{{grid}}</code></td></tr>
+        <tr><td>Punktoj, 5 mm</td><td><code>{{dots}}</code></td></tr>
+        <tr><td>Linioj, 7 mm</td><td><code>{{lines}}</code></td></tr>
+        <tr><td>Kontrollisto</td><td><code>{{checklist}}</code></td></tr>
+        <tr><td>Rado de la vivo</td><td><code>{{wheel Sano, Kariero, Mono, ...}}</code></td></tr>
+        <tr><td>Sudoko</td><td><code>{{sudoku 483920 medium 4}}</code>: semo-numero, la nivelo (<code>easy</code>, <code>medium</code>, <code>hard</code>) kaj kiom po paĝo (1, 2, 4 aŭ 6). Ĉiu havas ekzakte unu solvon. <b>Nova sudoko</b> faras novajn</td></tr>
+        <tr><td>Yatzy</td><td><code>{{yatzy 4}}</code>: poentfolio por 1–6 ludantoj; ĉiu linio havas etan sugeston, kiel ĝi kalkuliĝas</td></tr>
+        <tr><td>Kolorigebla mandalo</td><td><code>{{mandala 483920}}</code>: la numero difinas la desegnon. <b>Nova mandalo</b> desegnas novan; konservu la numeron por konservi tiun, kiu plaĉas al vi</td></tr>
+        <tr><td>100 horoj</td><td><code>{{hours 2026-11-25 14:30 squares marks hints}}</code></td></tr>
+        <tr><td>100 tagoj</td><td><code>{{days 2026-11-25 circles marks hints}}</code></td></tr>
+      </table>
+      <p>Vi povas skribi tekston super ŝablono, ekzemple titolon: la ŝablono okupas la restantan spacon.</p>
+      <p><b>100 horoj / 100 tagoj</b> estas krado 10 × 10, po unu ĉelo por horo aŭ tago, por kolorigi per krajono. Vortoj post <code>hours</code>/<code>days</code>: la komenca dato (kaj horo, por horoj) — preterlasu ĝin por ricevi malplenajn liniojn Komenco/Fino por mana plenigo; <code>squares</code> aŭ <code>circles</code> — la formo de la ĉeloj; <code>marks</code> — marki, kie komenciĝas ĉiu nova tago (horoj) aŭ monato (tagoj); <code>hints</code> — palaj sugestoj en la ĉeloj: la horo, kiam finiĝas ĉiu horo, aŭ la tago de la monato.</p>
+
+      <h2>Dosieroj</h2>
+      <ul>
+        <li><b>Eksporti MD</b> konservas ĉiujn 16 paĝojn en unu dosieron <code>content.md</code>, dividitan per titoloj <code>## 1</code> … <code>## 16</code>.</li>
+        <li><b>Importi MD</b> reŝargas tian dosieron. Paĝoj sen titolo restas malplenaj; se numero ripetiĝas, Foldlet avertas vin.</li>
+        <li>Nenio konserviĝas aŭtomate: eksportu MD antaŭ ol fermi la langeton.</li>
+      </ul>
+
+      <h2>Presado</h2>
+      <p>Alklaku <b>Presi / PDF</b> kaj en la presa dialogo elektu:</p>
+      <ul>
+        <li>paperon <b>A4</b>, marĝenojn <b>Neniuj</b>, skalon <b>100%</b>;</li>
+        <li>malŝaltu kaplinion kaj piedlinion, ŝaltu <b>Fonaj grafikaĵoj</b>, alie la faldaj linioj ne presiĝos.</li>
+      </ul>
+      <p>Vi ricevas 2 paĝojn: la antaŭan flankon (1–8) kaj la dorsan (9–16). Por nur unu flanko presu nur la unuan paĝon. Por dueflanka presado ambaŭ manieroj de turnado funkcias: laŭ la longa aŭ laŭ la mallonga rando.</p>
+
+      <h2>Kiel faldi</h2>
+      <ol>
+        <li>Faldu la folion laŭ ĉiu streketa linio, ambaŭdirekte, por ke la faldoj moliĝu.</li>
+        <li>Faldu la folion duone laŭlarĝe: la supran randon al la malsupra.</li>
+        <li>De la faldo tranĉu laŭ la plena linio en la mezo ĝis la sekva faldo.</li>
+        <li>Malfaldu, poste faldu la folion duone laŭlonge, laŭ la meza linio.</li>
+        <li>Puŝu la supran kaj la malsupran finojn al la mezo: la tranĉo malfermiĝas kiel rombo. Puŝu ĝis la fino kaj faldu la libreton tiel, ke paĝo 1 estu la kovrilo.</li>
+      </ol>
+    </article>
+
   </section>
 
+<script src="web/i18n.js"></script>
 <script src="web/app.js"></script>
 </body>
 </html>

@@ -93,6 +93,18 @@ body {
   flex-wrap: wrap;
 }
 
+/* Site language: switches the interface, the help and preset words. */
+.lang-select {
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
 /* --- Buttons and form controls --- */
 
 .btn {
@@ -458,29 +470,6 @@ textarea.cell-content {
   max-width: 820px;
   margin: 0 auto;
   padding: 24px;
-}
-
-.help-lang {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-}
-
-.lang-btn {
-  font: inherit;
-  font-weight: 600;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--muted);
-  border-radius: 999px;
-  padding: 5px 14px;
-  cursor: pointer;
-}
-
-.lang-btn.active {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
 }
 
 .help-body {

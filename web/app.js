@@ -121,8 +121,50 @@
   // own ids (16 pages can each hold one).
   var idSeq = 0;
 
+  // --- Site language: English (the text in the page), Russian or
+  // Esperanto. It sets the interface, the help and the words presets print
+  // (month names, titles, the Yatzy sheet).
+  var LANGS = ["en", "ru", "eo"];
+  var siteLang = "en";
+
   function uiLang() {
-    return navigator.language || "en";
+    return siteLang;
+  }
+
+  // English text -> the current language; "{n}" gets n.
+  function t(text, n) {
+    var table = (window.FOLDLET_I18N || {})[siteLang] || {};
+    var out = table.hasOwnProperty(text) ? table[text] : text;
+    return n === undefined ? out : out.replace("{n}", n);
+  }
+
+  // Chrome has no Esperanto date names, so Esperanto gets its own
+  // formatter for the few formats Foldlet uses; other languages use Intl.
+  var EO_MONTHS = ["januaro", "februaro", "marto", "aprilo", "majo", "junio", "julio", "aŭgusto",
+    "septembro", "oktobro", "novembro", "decembro"];
+  var EO_DAYS = ["dimanĉo", "lundo", "mardo", "merkredo", "ĵaŭdo", "vendredo", "sabato"];
+
+  function dateFmt(lang, opts) {
+    if (lang !== "eo") return new Intl.DateTimeFormat(lang, opts);
+    function format(d) {
+      var day = EO_DAYS[d.getDay()];
+      var month = EO_MONTHS[d.getMonth()];
+      if (opts.weekday && opts.day) return day + ", " + d.getDate() + "-a de " + month;
+      if (opts.weekday === "long") return day;
+      if (opts.weekday === "narrow") return day.charAt(0).toUpperCase();
+      if (opts.weekday) return day.slice(0, 2);
+      if (opts.day) return d.getDate() + "-a de " + month + (opts.year ? " " + d.getFullYear() : "");
+      if (opts.month === "short") return month.slice(0, 3);
+      return month;
+    }
+    return {
+      format: format,
+      formatRange: function (a, b) {
+        if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) return a.getDate() + "–" + format(b);
+        if (a.getFullYear() === b.getFullYear()) return a.getDate() + "-a de " + EO_MONTHS[a.getMonth()] + " – " + format(b);
+        return format(a) + " – " + format(b);
+      },
+    };
   }
 
   function pad2(n) {
@@ -204,9 +246,9 @@
   function monthBlock(year, month, startDay, lang, opts) {
     var first = new Date(year, month, 1);
     var daysInMonth = new Date(year, month + 1, 0).getDate();
-    var monthName = new Intl.DateTimeFormat(lang, { month: "long" }).format(first);
+    var monthName = dateFmt(lang, { month: "long" }).format(first);
     var title = capitalize(monthName) + (opts.noYear ? "" : " " + year);
-    var weekdayFmt = new Intl.DateTimeFormat(lang, { weekday: opts.narrow ? "narrow" : "short" });
+    var weekdayFmt = dateFmt(lang, { weekday: opts.narrow ? "narrow" : "short" });
     var head = "";
     for (var i = 0; i < 7; i++) {
       // 2023-01-01 was a Sunday, so day (1 + n) has getDay() === n.
@@ -234,9 +276,9 @@
     var anchor = new Date(o.year, o.month, o.day);
     var first = new Date(o.year, o.month, o.day - ((anchor.getDay() - startDay + 7) % 7));
     var last = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 6);
-    var rangeFmt = new Intl.DateTimeFormat(lang, { day: "numeric", month: "long", year: "numeric" });
+    var rangeFmt = dateFmt(lang, { day: "numeric", month: "long", year: "numeric" });
     var title = rangeFmt.formatRange ? rangeFmt.formatRange(first, last) : rangeFmt.format(first) + " – " + rangeFmt.format(last);
-    var dayFmt = new Intl.DateTimeFormat(lang, { weekday: "long", day: "numeric", month: "long" });
+    var dayFmt = dateFmt(lang, { weekday: "long", day: "numeric", month: "long" });
     var rows = "";
     for (var i = 0; i < 7; i++) {
       var d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
@@ -249,7 +291,7 @@
   function renderCalendar(arg) {
     var lang = uiLang();
     var o = parseCalendarArgs(arg);
-    var startDay = (o.start || firstDayOfWeek(lang)) % 7; // JS getDay(): 0 = Sunday
+    var startDay = (o.start || firstDayOfWeek(navigator.language || "en")) % 7; // JS getDay(): 0 = Sunday
     var inner;
     if (o.view === "week") {
       inner = weekBlock(o, startDay, lang);
@@ -307,6 +349,7 @@
   var WHEEL_LABELS = {
     ru: ["Здоровье", "Карьера", "Финансы", "Отношения", "Семья", "Друзья", "Развитие", "Отдых"],
     en: ["Health", "Career", "Money", "Love", "Family", "Friends", "Growth", "Fun"],
+    eo: ["Sano", "Kariero", "Mono", "Amo", "Familio", "Amikoj", "Kresko", "Amuzo"],
   };
 
   function defaultWheelLabels() {
@@ -530,7 +573,7 @@
 
     return presetBlock(
       "mandala",
-      '<div class="mandala-title">' + (/^ru/i.test(uiLang()) ? "Мандала " : "Mandala ") + escapeHtml(seed) + "</div>" +
+      '<div class="mandala-title">' + ({ ru: "Мандала ", eo: "Mandalo " }[uiLang()] || "Mandala ") + escapeHtml(seed) + "</div>" +
       '<svg class="preset-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-98 -98 196 196" preserveAspectRatio="xMidYMid meet">' +
         '<g fill="#fff" stroke="#222" stroke-width="0.7" stroke-linejoin="round">' + svg + "</g></svg>"
     );
@@ -750,6 +793,7 @@
   var SUDOKU_TEXT = {
     ru: { title: "Судоку", easy: "лёгкий", medium: "средний", hard: "сложный" },
     en: { title: "Sudoku", easy: "easy", medium: "medium", hard: "hard" },
+    eo: { title: "Sudoko", easy: "facila", medium: "meza", hard: "malfacila" },
   };
 
   function parseSudokuArgs(arg) {
@@ -771,7 +815,7 @@
   // together to whatever room the page has.
   function renderSudoku(arg) {
     var opts = parseSudokuArgs(arg);
-    var txt = SUDOKU_TEXT[/^ru\b/i.test(uiLang()) ? "ru" : "en"];
+    var txt = (SUDOKU_TEXT[uiLang()] || SUDOKU_TEXT.en);
     var layout = SUDOKU_LAYOUT[opts.count];
     var gap = 9;
     var size = 90;
@@ -830,6 +874,7 @@
   var TRACKER_TEXT = {
     ru: { start: "Начало", end: "Конец" },
     en: { start: "Start", end: "End" },
+    eo: { start: "Komenco", end: "Fino" },
   };
 
   function trackerText() {
@@ -858,12 +903,12 @@
   }
 
   function formatDate(d) {
-    var wd = new Intl.DateTimeFormat(uiLang(), { weekday: "short" }).format(d);
+    var wd = dateFmt(uiLang(), { weekday: "short" }).format(d);
     return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " (" + wd + ")";
   }
 
   function formatDateTime(d) {
-    var wd = new Intl.DateTimeFormat(uiLang(), { weekday: "short" }).format(d);
+    var wd = dateFmt(uiLang(), { weekday: "short" }).format(d);
     return (
       d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
       " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + " (" + wd + ")"
@@ -912,7 +957,7 @@
       mark: function (s, i) {
         var d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + i);
         if (d.getDate() !== 1) return null;
-        return new Intl.DateTimeFormat(uiLang(), { month: "short" }).format(d).replace(/\.$/, "");
+        return dateFmt(uiLang(), { month: "short" }).format(d).replace(/\.$/, "");
       },
     },
   };
@@ -1008,6 +1053,15 @@
       ["Full house", "3 + 2"], ["Chance", "all dice"], ["Yatzy", "5 alike = 50"],
       ["Total", "", "total"],
     ],
+    eo: [
+      ["Unuoj", "sumo de 1"], ["Duoj", "sumo de 2"], ["Trioj", "sumo de 3"],
+      ["Kvaroj", "sumo de 4"], ["Kvinoj", "sumo de 5"], ["Sesoj", "sumo de 6"],
+      ["Sumo", "", "sum"], ["Premio", "63+ → 50", "sum"],
+      ["Paro", "2 samaj"], ["Du paroj", "2 + 2"], ["Triopo", "3 samaj"],
+      ["Kvaropo", "4 samaj"], ["Malgranda vico", "1–5 = 15"], ["Granda vico", "2–6 = 20"],
+      ["Plena domo", "3 + 2"], ["Ŝanco", "ĉiuj kuboj"], ["Yatzy", "5 samaj = 50"],
+      ["Entute", "", "total"],
+    ],
   };
 
   function parseYatzyPlayers(arg) {
@@ -1017,13 +1071,13 @@
 
   function renderYatzy(arg) {
     var players = parseYatzyPlayers(arg);
-    var ru = /^ru\b/i.test(uiLang());
+    var lang = YATZY_ROWS[uiLang()] ? uiLang() : "en";
     var blank = "";
     for (var p = 0; p < players; p++) blank += "<td></td>";
     var html = '<table class="yatzy-table"><colgroup><col class="yatzy-label-col">' +
       new Array(players + 1).join("<col>") + '</colgroup><tr class="yatzy-names"><th>' +
-      (ru ? "Игрок" : "Player") + "</th>" + blank.replace(/td>/g, "th>") + "</tr>";
-    YATZY_ROWS[ru ? "ru" : "en"].forEach(function (r) {
+      ({ ru: "Игрок", eo: "Ludanto" }[lang] || "Player") + "</th>" + blank.replace(/td>/g, "th>") + "</tr>";
+    YATZY_ROWS[lang].forEach(function (r) {
       html += '<tr' + (r[2] ? ' class="yatzy-' + r[2] + '"' : "") + "><th>" + escapeHtml(r[0]) +
         (r[1] ? '<span class="yatzy-hint">' + escapeHtml(r[1]) + "</span>" : "") + "</th>" + blank + "</tr>";
     });
@@ -1111,7 +1165,7 @@
   }
 
   function localeWeekStart() {
-    return firstDayOfWeek(uiLang()) === 7 ? "sun" : "mon";
+    return firstDayOfWeek(navigator.language || "en") === 7 ? "sun" : "mon";
   }
 
   // Builds {{hours ...}} / {{days ...}} from the editor's tracker options.
@@ -1151,7 +1205,7 @@
     var dateInput = document.getElementById("tracker-start-date");
     timeInput.hidden = !hours;
     dateInput.hidden = hours;
-    document.getElementById("tracker-marks-text").textContent = hours ? "Day marks" : "Month marks";
+    document.getElementById("tracker-marks-text").textContent = t(hours ? "Day marks" : "Month marks");
     var now = new Date();
     var today = now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
     if (!timeInput.dataset.touched) timeInput.value = today + "T" + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
@@ -1409,7 +1463,7 @@
   }
 
   function pageLabel(slot) {
-    return "page " + PAGE_NUMBERS[slot.side][slot.name];
+    return t("page {n}", PAGE_NUMBERS[slot.side][slot.name]);
   }
 
   function selectPage(side, name) {
@@ -1434,7 +1488,7 @@
     var el = cellEl(slot.side, slot.name);
     var onlyPreset = DIRECTIVE_RE.test(el.value.trim());
     if (el.value.trim() && !onlyPreset && document.getElementById("ask-replace").checked &&
-        !confirm("Replace the current text on " + pageLabel(slot) + " with this preset?")) {
+        !confirm(t("Replace the current text on page {n} with this preset?", PAGE_NUMBERS[slot.side][slot.name]))) {
       syncPresetSelect();
       return;
     }
@@ -1450,7 +1504,7 @@
     var slot = selectedSlot();
     var btn = document.getElementById("btn-apply-preset");
     btn.hidden = !key || presetKeyOf(cellEl(slot.side, slot.name).value) === key;
-    btn.textContent = "Apply to " + pageLabel(slot);
+    btn.textContent = t("Apply to page {n}", PAGE_NUMBERS[slot.side][slot.name]);
   }
 
   // Which preset (if any) the page's text is: the preset menu shows it, so
@@ -1619,7 +1673,7 @@
         callback(png ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.88));
       };
       img.onerror = function () {
-        alert("Couldn't read this image: " + file.name);
+        alert(t("Couldn't read this image: ") + file.name);
       };
       img.src = dataUrl;
     };
@@ -1683,14 +1737,50 @@
     }
   }
 
-  function showHelpLang(lang) {
+  // Interface text in the top bar, the panel and the side headings is
+  // translated in place: each text node and title/aria-label keeps its
+  // English original, so switching back and forth always starts from it.
+  // Text that app.js sets itself (the page in the Preset heading, the
+  // Apply button, the marks label) is redone by its own code.
+  var DYNAMIC_TEXT = { "preset-target": 1, "btn-apply-preset": 1, "tracker-marks-text": 1 };
+
+  function translateStatic() {
+    document.querySelectorAll(".topbar, .panel, .sheet-label").forEach(function (root) {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      var node;
+      while ((node = walker.nextNode())) {
+        if (node.parentNode && DYNAMIC_TEXT[node.parentNode.id]) continue;
+        if (node.enText === undefined) {
+          if (!node.nodeValue.trim()) continue;
+          node.enText = node.nodeValue;
+        }
+        var key = node.enText.trim();
+        node.nodeValue = node.enText.replace(key, t(key));
+      }
+      root.querySelectorAll("[title], [aria-label]").forEach(function (el) {
+        ["title", "aria-label"].forEach(function (attr) {
+          if (!el.hasAttribute(attr)) return;
+          var prop = attr === "title" ? "enTitle" : "enAria";
+          if (el[prop] === undefined) el[prop] = el.getAttribute(attr);
+          el.setAttribute(attr, t(el[prop]));
+        });
+      });
+    });
+  }
+
+  function setLanguage(lang) {
+    siteLang = LANGS.indexOf(lang) !== -1 ? lang : "en";
+    document.documentElement.lang = siteLang;
+    document.getElementById("site-lang").value = siteLang;
+    writePref("lang", siteLang);
+    translateStatic();
     document.querySelectorAll(".help-body").forEach(function (el) {
-      el.hidden = el.dataset.lang !== lang;
+      el.hidden = el.dataset.lang !== siteLang;
     });
-    document.querySelectorAll(".lang-btn").forEach(function (btn) {
-      btn.classList.toggle("active", btn.dataset.lang === lang);
-    });
-    writePref("helpLang", lang);
+    // Redo the text app.js sets, and redraw the pages: presets print
+    // month names and titles in the site language.
+    selectPage(selected.side, selected.name);
+    renderAllCells();
   }
 
   function initChrome() {
@@ -1700,12 +1790,9 @@
       });
     });
 
-    document.querySelectorAll(".lang-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        showHelpLang(btn.dataset.lang);
-      });
+    document.getElementById("site-lang").addEventListener("change", function (e) {
+      setLanguage(e.target.value);
     });
-    showHelpLang(readPref("helpLang") || (/^ru\b/i.test(uiLang()) ? "ru" : "en"));
 
     document.querySelectorAll("[data-keep-edit]").forEach(function (btn) {
       // Keep focus (and the selection) in the textarea being edited.
@@ -1894,10 +1981,7 @@
       var parsed = parseMarkdownSections(text);
       var sections = parsed.sections;
       if (Object.keys(sections).length === 0) {
-        alert(
-          'No page headings found. Mark each section with a heading naming ' +
-            'the page number, e.g. "## 1".'
-        );
+        alert(t('No page headings found. Mark each section with a heading naming the page number, e.g. "## 1".'));
         return;
       }
       // Pages without a matching heading in the file are blanked — the .md
@@ -1910,10 +1994,9 @@
       renderAllCells();
       if (parsed.duplicates.length) {
         alert(
-          "Some page numbers appear more than once: " +
+          t("Some page numbers appear more than once: ") +
             parsed.duplicates.map(function (n) { return "## " + n; }).join(", ") +
-            ".\nOnly the last section with each number was used; the earlier " +
-            "ones were dropped. Check the page numbering in the file."
+            t(".\nOnly the last section with each number was used; the earlier ones were dropped. Check the page numbering in the file.")
         );
       }
     });
@@ -2038,6 +2121,7 @@
     initChrome();
 
     loadDemo();
+    setLanguage(readPref("lang") || "en");
   }
 
   document.addEventListener("DOMContentLoaded", init);

@@ -51,8 +51,12 @@ build step, no network access.
   leaves it out of printing (one A4 page). Its text is kept, and Export MD
   still saves it.
 - **Zoom** scales the on-screen pages.
-- The **Help · Справка** tab explains all of this in Russian and English,
-  including how to fold the printed sheet.
+- The language menu at the top right switches the whole site between
+  English (the default), Russian and Esperanto: the interface, the help and
+  the words presets print. The choice is remembered. Translations live in
+  `web/i18n.js`, keyed by the English text.
+- The **Help** tab explains all of this, including how to fold the printed
+  sheet.
 - **Export MD** downloads all 16 pages as a single `content.md`, one `## 1`
   through `## 16` section per page (in reading order).
 - **Import MD** loads a `.md` file split into pages by headings that name a
@@ -112,9 +116,9 @@ saved by Export MD, loaded by Import MD and can be edited by hand:
 | 100 days | `{{days 2026-11-25 circles marks}}` |
 
 The block fills whatever height is left on the page, so text above it
-(e.g. a `**title**` line) works. Month and weekday names and the first day
-of the week follow the browser's language, as do the wheel's default areas
-(Russian or English).
+(e.g. a `**title**` line) works. Month and weekday names, preset titles
+and the wheel's default areas follow the site language; the default first
+day of the week follows the browser's locale.
 
 **100 hours / 100 days** prints a "100 hours challenge" / "100 days
 challenge" title, Start and End and a 10 × 10 grid, one cell
