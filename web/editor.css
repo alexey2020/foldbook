@@ -239,8 +239,15 @@ body {
   flex-wrap: wrap;
 }
 
+/* A select is as wide as its longest option; min-width 0 lets it shrink
+   to the panel instead (long translated entries overflowed it). */
 .row select {
   flex: 1 1 auto;
+  min-width: 0;
+}
+
+.panel select {
+  max-width: 100%;
 }
 
 .options {
