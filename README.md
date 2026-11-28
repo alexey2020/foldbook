@@ -93,18 +93,20 @@ panel's heading), choose a **Preset**, and it fills that page with a ready-made 
 away; changing a preset's options updates the page too. A page with text
 of its own is replaced only after a confirmation (unless **Ask before a
 preset replaces text** in the View panel is unchecked); a page holding
-only a preset line is swapped without asking. A preset is just one directive line in the page's text, so it is
+only a preset line is swapped without asking. The chosen preset stays when you click a page
+without one; **Apply to page N** then puts it there too. A preset is just one directive line in the page's text, so it is
 saved by Export MD, loaded by Import MD and can be edited by hand:
 
 | Preset | Directive |
 |---|---|
-| Calendar | `{{calendar 2026-11}}` (month as `YYYY-MM`; empty = current month) |
+| Calendar | `{{calendar 2026-11 month mon}}`: view `month`, `3months` (previous, this, next), `week` (`2026-11-25`, any day of it; a row per day) or `year` (`2026`); `mon` / `sun` = first day of the week (default: the browser's locale); no date = today |
 | Grid, 5mm | `{{grid}}` |
 | Dot grid, 5mm | `{{dots}}` |
 | Lined, 7mm | `{{lines}}` |
 | Checklist | `{{checklist}}` |
 | Wheel of life | `{{wheel Health, Career, Money, ...}}` (3+ comma-separated areas) |
 | Sudoku | `{{sudoku 483920 medium 4}}` (seed; `easy` / `medium` / `hard`; 1, 2, 4 or 6 per page; always one solution) |
+| Yatzy score sheet | `{{yatzy 4}}` (1-6 players; each row has a small scoring hint) |
 | Mandala to color | `{{mandala 483920}}` (the number seeds the pattern; **New mandala** picks a new one; the title shows it) |
 | 100 hours | `{{hours 2026-11-25 14:30 squares marks hints}}` |
 | 100 days | `{{days 2026-11-25 circles marks}}` |

@@ -152,14 +152,6 @@
     return '<div class="preset preset-' + kind + '">' + inner + "</div>";
   }
 
-  // "YYYY-MM" -> {year, month(0-11)}; anything else -> the current month.
-  function parseMonth(arg) {
-    var m = /^(\d{4})-(\d{1,2})$/.exec(arg || "");
-    if (m && +m[2] >= 1 && +m[2] <= 12) return { year: +m[1], month: +m[2] - 1 };
-    var now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() };
-  }
-
   // 1 = Monday ... 7 = Sunday, from the browser's locale where supported.
   function firstDayOfWeek(lang) {
     try {
@@ -170,40 +162,114 @@
     return 1;
   }
 
-  function renderCalendar(arg) {
-    var lang = uiLang();
-    var ym = parseMonth(arg);
-    var first = new Date(ym.year, ym.month, 1);
-    var daysInMonth = new Date(ym.year, ym.month + 1, 0).getDate();
-    var monthName = new Intl.DateTimeFormat(lang, { month: "long" }).format(first);
-    var title = monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + ym.year;
+  // {{calendar [period] [month|3months|week|year] [mon|sun]}}, words in any
+  // order. The period is YYYY, YYYY-MM or YYYY-MM-DD (any day of the
+  // week); missing = today. The view defaults to month (year if only a
+  // year is given); the first day of the week to the browser's locale.
+  var CAL_VIEWS = ["month", "3months", "week", "year"];
 
-    var startDay = firstDayOfWeek(lang) % 7; // JS getDay(): 0 = Sunday
-    var weekdayFmt = new Intl.DateTimeFormat(lang, { weekday: "short" });
+  function parseCalendarArgs(arg) {
+    var now = new Date();
+    var o = { view: "", year: now.getFullYear(), month: now.getMonth(), day: now.getDate(), start: 0 };
+    var yearOnly = false;
+    (arg || "").split(/\s+/).filter(Boolean).forEach(function (w) {
+      var lw = w.toLowerCase();
+      var m;
+      if (CAL_VIEWS.indexOf(lw) !== -1) o.view = lw;
+      else if (lw === "mon") o.start = 1;
+      else if (lw === "sun") o.start = 7;
+      else if ((m = /^(\d{4})(?:-(\d{1,2})(?:-(\d{1,2}))?)?$/.exec(w))) {
+        o.year = +m[1];
+        yearOnly = !m[2];
+        o.month = m[2] && +m[2] >= 1 && +m[2] <= 12 ? +m[2] - 1 : 0;
+        var dim = new Date(o.year, o.month + 1, 0).getDate();
+        o.day = m[3] && +m[3] >= 1 && +m[3] <= dim ? +m[3] : 1;
+      }
+    });
+    if (!o.view) o.view = yearOnly ? "year" : "month";
+    return o;
+  }
+
+  function capitalize(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function isWeekend(dow) {
+    return dow === 0 || dow === 6;
+  }
+
+  // One month: its title and a 7-column grid. startDay uses getDay()
+  // numbering (0 = Sunday). sixRows pads every month to 6 week rows so the
+  // months of a year line up.
+  function monthBlock(year, month, startDay, lang, opts) {
+    var first = new Date(year, month, 1);
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var monthName = new Intl.DateTimeFormat(lang, { month: "long" }).format(first);
+    var title = capitalize(monthName) + (opts.noYear ? "" : " " + year);
+    var weekdayFmt = new Intl.DateTimeFormat(lang, { weekday: opts.narrow ? "narrow" : "short" });
     var head = "";
     for (var i = 0; i < 7; i++) {
       // 2023-01-01 was a Sunday, so day (1 + n) has getDay() === n.
       var wd = (startDay + i) % 7;
-      var weekend = wd === 0 || wd === 6 ? " cal-weekend" : "";
-      head += '<div class="cal-head' + weekend + '">' + escapeHtml(weekdayFmt.format(new Date(2023, 0, 1 + wd))) + "</div>";
+      head += '<div class="cal-head' + (isWeekend(wd) ? " cal-weekend" : "") + '">' +
+        escapeHtml(weekdayFmt.format(new Date(2023, 0, 1 + wd))) + "</div>";
     }
-
     var lead = (first.getDay() - startDay + 7) % 7;
-    var total = Math.ceil((lead + daysInMonth) / 7) * 7;
+    var total = opts.sixRows ? 42 : Math.ceil((lead + daysInMonth) / 7) * 7;
     var cells = "";
     for (var c = 0; c < total; c++) {
       var day = c - lead + 1;
-      var dow = (startDay + c) % 7;
-      var cls = "cal-day" + (dow === 0 || dow === 6 ? " cal-weekend" : "");
+      var cls = "cal-day" + (isWeekend((startDay + c) % 7) ? " cal-weekend" : "");
       cells += day >= 1 && day <= daysInMonth
         ? '<div class="' + cls + '">' + day + "</div>"
         : '<div class="' + cls + ' cal-empty"></div>';
     }
-    return presetBlock(
-      "calendar",
+    return '<div class="cal-month">' +
       '<div class="cal-title">' + escapeHtml(title) + "</div>" +
-        '<div class="cal-grid" style="grid-template-rows:auto repeat(' + total / 7 + ',1fr)">' + head + cells + "</div>"
-    );
+      '<div class="cal-grid" style="grid-template-rows:auto repeat(' + total / 7 + ',1fr)">' + head + cells + "</div></div>";
+  }
+
+  // A week: one row per day, room to write in each.
+  function weekBlock(o, startDay, lang) {
+    var anchor = new Date(o.year, o.month, o.day);
+    var first = new Date(o.year, o.month, o.day - ((anchor.getDay() - startDay + 7) % 7));
+    var last = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 6);
+    var rangeFmt = new Intl.DateTimeFormat(lang, { day: "numeric", month: "long", year: "numeric" });
+    var title = rangeFmt.formatRange ? rangeFmt.formatRange(first, last) : rangeFmt.format(first) + " – " + rangeFmt.format(last);
+    var dayFmt = new Intl.DateTimeFormat(lang, { weekday: "long", day: "numeric", month: "long" });
+    var rows = "";
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
+      rows += '<div class="cal-wday' + (isWeekend(d.getDay()) ? " cal-weekend" : "") + '">' +
+        escapeHtml(capitalize(dayFmt.format(d))) + "</div>";
+    }
+    return '<div class="cal-title">' + escapeHtml(title) + '</div><div class="cal-week">' + rows + "</div>";
+  }
+
+  function renderCalendar(arg) {
+    var lang = uiLang();
+    var o = parseCalendarArgs(arg);
+    var startDay = (o.start || firstDayOfWeek(lang)) % 7; // JS getDay(): 0 = Sunday
+    var inner;
+    if (o.view === "week") {
+      inner = weekBlock(o, startDay, lang);
+    } else if (o.view === "3months") {
+      inner = '<div class="cal-months">';
+      for (var k = -1; k <= 1; k++) {
+        var d = new Date(o.year, o.month + k, 1);
+        inner += monthBlock(d.getFullYear(), d.getMonth(), startDay, lang, {});
+      }
+      inner += "</div>";
+    } else if (o.view === "year") {
+      inner = '<div class="cal-title">' + o.year + '</div><div class="cal-year">';
+      for (var m = 0; m < 12; m++) {
+        inner += monthBlock(o.year, m, startDay, lang, { noYear: true, narrow: true, sixRows: true });
+      }
+      inner += "</div>";
+    } else {
+      inner = monthBlock(o.year, o.month, startDay, lang, {});
+    }
+    return presetBlock("calendar cal-view-" + o.view, inner);
   }
 
   function renderGrid() {
@@ -921,6 +987,49 @@
     );
   }
 
+  // Yatzy score sheet (Scandinavian rules): {{yatzy N}}, N = 1-6 player
+  // columns. Each row says how it scores, in small grey print.
+  var YATZY_ROWS = {
+    ru: [
+      ["Единицы", "сумма 1"], ["Двойки", "сумма 2"], ["Тройки", "сумма 3"],
+      ["Четвёрки", "сумма 4"], ["Пятёрки", "сумма 5"], ["Шестёрки", "сумма 6"],
+      ["Сумма", "", "sum"], ["Бонус", "63+ → 50", "sum"],
+      ["Пара", "2 одинак."], ["Две пары", "2 + 2"], ["Тройка", "3 одинак."],
+      ["Каре", "4 одинак."], ["Малый стрит", "1–5 = 15"], ["Большой стрит", "2–6 = 20"],
+      ["Фулл-хаус", "3 + 2"], ["Шанс", "все кубики"], ["Yatzy", "5 одинак. = 50"],
+      ["Итого", "", "total"],
+    ],
+    en: [
+      ["Ones", "sum of 1s"], ["Twos", "sum of 2s"], ["Threes", "sum of 3s"],
+      ["Fours", "sum of 4s"], ["Fives", "sum of 5s"], ["Sixes", "sum of 6s"],
+      ["Sum", "", "sum"], ["Bonus", "63+ → 50", "sum"],
+      ["One pair", "2 alike"], ["Two pairs", "2 + 2"], ["Three of a kind", "3 alike"],
+      ["Four of a kind", "4 alike"], ["Small straight", "1–5 = 15"], ["Large straight", "2–6 = 20"],
+      ["Full house", "3 + 2"], ["Chance", "all dice"], ["Yatzy", "5 alike = 50"],
+      ["Total", "", "total"],
+    ],
+  };
+
+  function parseYatzyPlayers(arg) {
+    var n = parseInt(arg, 10);
+    return n >= 1 && n <= 6 ? n : 4;
+  }
+
+  function renderYatzy(arg) {
+    var players = parseYatzyPlayers(arg);
+    var ru = /^ru\b/i.test(uiLang());
+    var blank = "";
+    for (var p = 0; p < players; p++) blank += "<td></td>";
+    var html = '<table class="yatzy-table"><colgroup><col class="yatzy-label-col">' +
+      new Array(players + 1).join("<col>") + '</colgroup><tr class="yatzy-names"><th>' +
+      (ru ? "Игрок" : "Player") + "</th>" + blank.replace(/td>/g, "th>") + "</tr>";
+    YATZY_ROWS[ru ? "ru" : "en"].forEach(function (r) {
+      html += '<tr' + (r[2] ? ' class="yatzy-' + r[2] + '"' : "") + "><th>" + escapeHtml(r[0]) +
+        (r[1] ? '<span class="yatzy-hint">' + escapeHtml(r[1]) + "</span>" : "") + "</th>" + blank + "</tr>";
+    });
+    return presetBlock("yatzy", '<div class="yatzy-title">Yatzy</div>' + html + "</table>");
+  }
+
   var DIRECTIVES = {
     hours: function (arg) {
       return renderTracker("hours", arg);
@@ -936,13 +1045,14 @@
     wheel: renderWheel,
     mandala: renderMandala,
     sudoku: renderSudoku,
+    yatzy: renderYatzy,
   };
 
   // The text a preset puts on a page (what "Apply preset" inserts).
   var PRESETS = {
-    calendar: function () {
-      var now = new Date();
-      return "{{calendar " + now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "}}";
+    calendar: calendarDirective,
+    yatzy: function () {
+      return "{{yatzy " + document.getElementById("yatzy-players").value + "}}";
     },
     grid: function () {
       return "{{grid}}";
@@ -971,6 +1081,39 @@
     tracker: trackerDirective,
   };
 
+  // Builds {{calendar ...}} from the panel: the view, its period (a month,
+  // a year or any day of the week) and the first day of the week.
+  var CAL_PERIOD_INPUT = { month: "cal-month", "3months": "cal-month", year: "cal-year", week: "cal-date" };
+
+  function calendarDirective() {
+    var view = document.getElementById("cal-view").value;
+    var period = document.getElementById(CAL_PERIOD_INPUT[view]).value.trim();
+    return "{{calendar " + (period ? period + " " : "") + view + " " + document.getElementById("cal-start").value + "}}";
+  }
+
+  // The three period inputs show the same moment, so switching the view
+  // keeps the period.
+  function setCalendarInputs(year, month, day) {
+    document.getElementById("cal-month").value = year + "-" + pad2(month + 1);
+    document.getElementById("cal-year").value = String(year);
+    document.getElementById("cal-date").value = year + "-" + pad2(month + 1) + "-" + pad2(day);
+  }
+
+  function calendarInputChanged(e) {
+    var v = e.target.value;
+    var m;
+    if (e.target.id === "cal-month" && (m = /^(\d{4})-(\d{2})$/.exec(v))) setCalendarInputs(+m[1], +m[2] - 1, 1);
+    else if (e.target.id === "cal-date" && (m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v))) setCalendarInputs(+m[1], +m[2] - 1, +m[3]);
+    else if (e.target.id === "cal-year" && /^\d{4}$/.test(v)) {
+      var d = /^\d{4}-(\d{2})-(\d{2})$/.exec(document.getElementById("cal-date").value) || [0, "01", "01"];
+      setCalendarInputs(+v, +d[1] - 1, Math.min(+d[2], new Date(+v, +d[1], 0).getDate()));
+    }
+  }
+
+  function localeWeekStart() {
+    return firstDayOfWeek(uiLang()) === 7 ? "sun" : "mon";
+  }
+
   // Builds {{hours ...}} / {{days ...}} from the editor's tracker options.
   function trackerDirective() {
     var unit = document.getElementById("tracker-unit").value;
@@ -996,6 +1139,13 @@
     document.getElementById("tracker-options").hidden = key !== "tracker";
     document.getElementById("mandala-options").hidden = key !== "mandala";
     document.getElementById("sudoku-options").hidden = key !== "sudoku";
+    document.getElementById("yatzy-options").hidden = key !== "yatzy";
+    syncApplyButton();
+    document.getElementById("calendar-options").hidden = key !== "calendar";
+    var calInput = CAL_PERIOD_INPUT[document.getElementById("cal-view").value];
+    ["cal-month", "cal-year", "cal-date"].forEach(function (id) {
+      document.getElementById(id).hidden = id !== calInput;
+    });
     var hours = document.getElementById("tracker-unit").value === "hours";
     var timeInput = document.getElementById("tracker-start-time");
     var dateInput = document.getElementById("tracker-start-date");
@@ -1290,6 +1440,17 @@
     }
     el.value = PRESETS[key]();
     renderCell(slot.side, slot.name);
+    syncApplyButton();
+  }
+
+  // "Apply to page N" shows when a preset is chosen but the selected page
+  // doesn't have it yet (picking the same menu entry again isn't a change).
+  function syncApplyButton() {
+    var key = document.getElementById("preset-select").value;
+    var slot = selectedSlot();
+    var btn = document.getElementById("btn-apply-preset");
+    btn.hidden = !key || presetKeyOf(cellEl(slot.side, slot.name).value) === key;
+    btn.textContent = "Apply to " + pageLabel(slot);
   }
 
   // Which preset (if any) the page's text is: the preset menu shows it, so
@@ -1307,12 +1468,23 @@
     var slot = selectedSlot();
     var text = cellEl(slot.side, slot.name).value;
     var key = presetKeyOf(text);
-    document.getElementById("preset-select").value = key;
+    // A page with a preset shows it; a page without one keeps the current
+    // choice, so the same preset can go onto several pages in a row.
+    if (key) document.getElementById("preset-select").value = key;
     // Show the page's own sudoku settings.
     if (key === "sudoku") {
       var opts = parseSudokuArgs(DIRECTIVE_RE.exec(text.trim())[2]);
       document.getElementById("sudoku-level").value = opts.level;
       document.getElementById("sudoku-count").value = String(opts.count);
+    }
+    if (key === "calendar") {
+      var cal = parseCalendarArgs(DIRECTIVE_RE.exec(text.trim())[2]);
+      document.getElementById("cal-view").value = cal.view;
+      document.getElementById("cal-start").value = cal.start ? (cal.start === 7 ? "sun" : "mon") : localeWeekStart();
+      setCalendarInputs(cal.year, cal.month, cal.day);
+    }
+    if (key === "yatzy") {
+      document.getElementById("yatzy-players").value = String(parseYatzyPlayers(DIRECTIVE_RE.exec(text.trim())[2]));
     }
     syncPresetOptions();
   }
@@ -1830,10 +2002,21 @@
       applyPresetToCell();
     });
     selectPage(selected.side, selected.name);
+    document.getElementById("btn-apply-preset").addEventListener("click", applyPresetToCell);
     document.getElementById("btn-new-mandala").addEventListener("click", applyPresetToCell);
     document.getElementById("btn-new-sudoku").addEventListener("click", applyPresetToCell);
-    ["sudoku-level", "sudoku-count"].forEach(function (id) {
+    ["sudoku-level", "sudoku-count", "yatzy-players"].forEach(function (id) {
       document.getElementById(id).addEventListener("change", applyPresetToCell);
+    });
+    var today = new Date();
+    setCalendarInputs(today.getFullYear(), today.getMonth(), today.getDate());
+    document.getElementById("cal-start").value = localeWeekStart();
+    ["cal-view", "cal-start", "cal-month", "cal-year", "cal-date"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", function (e) {
+        calendarInputChanged(e);
+        syncPresetOptions();
+        applyPresetToCell();
+      });
     });
     ["tracker-start-time", "tracker-start-date"].forEach(function (id) {
       document.getElementById(id).addEventListener("input", function (e) {

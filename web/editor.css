@@ -141,7 +141,9 @@ body {
 
 .panel select,
 .panel input[type="date"],
-.panel input[type="datetime-local"] {
+.panel input[type="datetime-local"],
+.panel input[type="month"],
+.panel input[type="number"] {
   font: inherit;
   color: var(--ink);
   background: #fff;
@@ -237,7 +239,8 @@ body {
   border-top: 1px dashed var(--line);
 }
 
-.options[hidden] {
+.options[hidden],
+.btn[hidden] {
   display: none;
 }
 
