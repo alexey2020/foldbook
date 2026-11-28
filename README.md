@@ -2,7 +2,7 @@
 
 Turn a single A4 sheet into a printable 8-panel foldable booklet (16 with
 double-sided printing) — like pocketmod.com, but with no login. A pure
-static web page: open `web/index.html` in a browser, no server, no build
+static web page: open `index.html` in a browser, no server, no build
 step, no install, no account.
 
 The A4 sheet is a 2-column × 4-row grid, addressed internally by grid
@@ -33,7 +33,7 @@ one physical sheet, and how the two sides line up once folded.
 
 ## Usage
 
-Open `web/index.html` directly in a browser (double-click it). No server, no
+Open `index.html` directly in a browser (double-click it). No server, no
 build step, no network access.
 
 - Demo content loads automatically so you can see the layout immediately.
@@ -216,7 +216,8 @@ lines up across the fold.
 ```
 layout.css     Shared print layout (grid + rotation) — the single source of
                truth for both the on-screen editor and the printed result.
-web/           Static, no-build web editor (index.html, app.js, editor.css).
+index.html     The web editor page (static, no build).
+web/           Its script and styles (app.js, editor.css), help images (img/).
 comics/        Printable SVG comics built on the same layout.css.
 ```
 
