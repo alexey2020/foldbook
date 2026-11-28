@@ -81,15 +81,18 @@
           <select id="preset-select" aria-label="Preset">
             <option value="">No preset</option>
             <option value="calendar">Calendar</option>
-            <option value="grid">Grid</option>
-            <option value="dots">Dot grid</option>
-            <option value="lines">Lined</option>
+            <option value="paper">Paper: grid, lines, dots…</option>
             <option value="checklist">Checklist</option>
+            <option value="eisenhower">Eisenhower matrix</option>
+            <option value="decision">Decision: pros and cons</option>
+            <option value="journal">Journal: gratitude, mood</option>
+            <option value="tracker">100 hours / days</option>
+            <option value="expenses">Shared expenses</option>
             <option value="wheel">Wheel of life</option>
             <option value="mandala">Mandala to color</option>
+            <option value="maze">Maze</option>
             <option value="sudoku">Sudoku</option>
             <option value="yatzy">Yatzy score sheet</option>
-            <option value="tracker">100 hours / days</option>
           </select>
         </div>
         <button id="btn-apply-preset" class="btn btn-primary btn-block" type="button" hidden>Apply to page</button>
@@ -135,6 +138,37 @@
             </select>
           </div>
           <button id="btn-new-sudoku" class="btn btn-block" type="button">New sudoku</button>
+        </div>
+        <div class="options" id="paper-options" hidden>
+          <select id="paper-kind" aria-label="Ruling">
+            <option value="grid">Grid, 5 mm</option>
+            <option value="lines">Lined, 7 mm</option>
+            <option value="dots">Dot grid, 5 mm</option>
+            <option value="iso">Isometric grid</option>
+            <option value="hex">Hex grid</option>
+          </select>
+        </div>
+        <div class="options" id="journal-options" hidden>
+          <select id="journal-kind" aria-label="Journal">
+            <option value="gratitude">Gratitude, one day</option>
+            <option value="mood">Mood, one month</option>
+          </select>
+          <input id="journal-month" type="month" aria-label="Month" title="Month" hidden>
+        </div>
+        <div class="options" id="maze-options" hidden>
+          <select id="maze-size" aria-label="Maze size">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+          </select>
+          <button id="btn-new-maze" class="btn btn-block" type="button">New maze</button>
+        </div>
+        <div class="options" id="expenses-options" hidden>
+          <select id="expenses-people" aria-label="People">
+            <option value="2">2 people</option>
+            <option value="3" selected>3 people</option>
+            <option value="4">4 people</option>
+          </select>
         </div>
         <div class="options" id="mandala-options" hidden>
           <button id="btn-new-mandala" class="btn btn-block" type="button">New mandala</button>
@@ -339,10 +373,14 @@
       <table>
         <tr><th>Шаблон</th><th>Строка</th></tr>
         <tr><td>Календарь</td><td><code>{{calendar 2026-11 month mon}}</code>. Вид: <code>month</code> (месяц), <code>3months</code> (прошлый, этот и следующий), <code>week</code> (неделя, по строке на день; дата — любой её день, <code>2026-11-25</code>), <code>year</code> (год, <code>2026</code>). <code>mon</code> или <code>sun</code> — с какого дня начинается неделя. Без даты — сегодня</td></tr>
-        <tr><td>Клетка 5 мм</td><td><code>{{grid}}</code></td></tr>
-        <tr><td>Точки 5 мм</td><td><code>{{dots}}</code></td></tr>
-        <tr><td>Линейка 7 мм</td><td><code>{{lines}}</code></td></tr>
+        <tr><td>Разлиновка</td><td><code>{{grid}}</code> клетка 5 мм, <code>{{lines}}</code> линейка 7 мм, <code>{{dots}}</code> точки 5 мм, <code>{{iso}}</code> изометрическая сетка, <code>{{hex}}</code> шестиугольники. В панели это один пункт, вид выбирается вторым списком</td></tr>
         <tr><td>Чек-лист</td><td><code>{{checklist}}</code></td></tr>
+        <tr><td>Матрица Эйзенхауэра</td><td><code>{{eisenhower}}</code> — четыре квадрата «срочно / важно»: сделать сейчас, запланировать, поручить другим, отказаться</td></tr>
+        <tr><td>Решение</td><td><code>{{decision}}</code> — сверху строка «Решение», под ней два столбца: плюсы и минусы. Можно сразу вписать, что решаете: <code>{{decision Переезд в Берлин}}</code></td></tr>
+        <tr><td>Дневник благодарности</td><td><code>{{gratitude}}</code> — страница на день: дата, за что я благодарю, лучший момент, настроение (обведите рожицу)</td></tr>
+        <tr><td>Дневник настроения</td><td><code>{{mood 2026-11}}</code> — дни месяца, чтобы закрашивать цветом настроения, и легенда цветов</td></tr>
+        <tr><td>Общие траты</td><td><code>{{expenses 3}}</code> или <code>{{expenses Аня, Боря, Вика}}</code> — 2–4 человека. В каждой строке: что, сумма, кто платил и галочки у тех, кто делит трату. Внизу итог по каждому: заплатил − доля</td></tr>
+        <tr><td>Лабиринт</td><td><code>{{maze 483920 medium}}</code> — номер-seed и размер (<code>small</code>, <code>medium</code>, <code>large</code>). Кнопка <b>Новый лабиринт</b> рисует новый</td></tr>
         <tr><td>Колесо баланса</td><td><code>{{wheel Здоровье, Работа, Деньги, ...}}</code></td></tr>
         <tr><td>Судоку</td><td><code>{{sudoku 483920 medium 4}}</code> — номер-seed, уровень (<code>easy</code>, <code>medium</code>, <code>hard</code>) и сколько штук на странице (1, 2, 4 или 6). У каждой ровно одно решение. Кнопка <b>Новое судоку</b> даёт новые</td></tr>
         <tr><td>Yatzy</td><td><code>{{yatzy 4}}</code> — бланк для записи очков, 1–6 игроков; у каждой строки мелко подсказано, как она считается</td></tr>
@@ -441,10 +479,14 @@
       <table>
         <tr><th>Preset</th><th>Line</th></tr>
         <tr><td>Calendar</td><td><code>{{calendar 2026-11 month mon}}</code>. View: <code>month</code>, <code>3months</code> (previous, this and next), <code>week</code> (a row per day; the date is any day of it, <code>2026-11-25</code>), <code>year</code> (<code>2026</code>). <code>mon</code> or <code>sun</code>: the first day of the week. No date = today</td></tr>
-        <tr><td>Grid, 5 mm</td><td><code>{{grid}}</code></td></tr>
-        <tr><td>Dot grid, 5 mm</td><td><code>{{dots}}</code></td></tr>
-        <tr><td>Lined, 7 mm</td><td><code>{{lines}}</code></td></tr>
+        <tr><td>Paper</td><td><code>{{grid}}</code> grid 5 mm, <code>{{lines}}</code> lined 7 mm, <code>{{dots}}</code> dots 5 mm, <code>{{iso}}</code> isometric grid, <code>{{hex}}</code> hex grid. One entry in the panel; pick the kind in the second menu</td></tr>
         <tr><td>Checklist</td><td><code>{{checklist}}</code></td></tr>
+        <tr><td>Eisenhower matrix</td><td><code>{{eisenhower}}</code>: four boxes by urgent / important: do now, schedule, delegate, drop</td></tr>
+        <tr><td>Decision</td><td><code>{{decision}}</code>: a "Decision" line on top, then two columns, pros and cons. You can name it right away: <code>{{decision Move to Berlin}}</code></td></tr>
+        <tr><td>Gratitude journal</td><td><code>{{gratitude}}</code>: a page for one day: date, what I'm grateful for, the best moment, mood (circle a face)</td></tr>
+        <tr><td>Mood journal</td><td><code>{{mood 2026-11}}</code>: the month's days to color by mood, with a color key</td></tr>
+        <tr><td>Shared expenses</td><td><code>{{expenses 3}}</code> or <code>{{expenses Anna, Boris, Vika}}</code>: 2–4 people. Each row: what, amount, who paid, and ticks for who shares it. Below, a balance per person: paid − share</td></tr>
+        <tr><td>Maze</td><td><code>{{maze 483920 medium}}</code>: a seed number and the size (<code>small</code>, <code>medium</code>, <code>large</code>). <b>New maze</b> draws a new one</td></tr>
         <tr><td>Wheel of life</td><td><code>{{wheel Health, Career, Money, ...}}</code></td></tr>
         <tr><td>Sudoku</td><td><code>{{sudoku 483920 medium 4}}</code>: a seed number, the level (<code>easy</code>, <code>medium</code>, <code>hard</code>) and how many per page (1, 2, 4 or 6). Each has exactly one solution. <b>New sudoku</b> makes new ones</td></tr>
         <tr><td>Yatzy</td><td><code>{{yatzy 4}}</code>: a score sheet for 1–6 players; each row has a small hint on how it scores</td></tr>
@@ -543,10 +585,14 @@
       <table>
         <tr><th>Ŝablono</th><th>Linio</th></tr>
         <tr><td>Kalendaro</td><td><code>{{calendar 2026-11 month mon}}</code>. Vido: <code>month</code> (monato), <code>3months</code> (la antaŭa, ĉi tiu kaj la sekva), <code>week</code> (semajno, po linio por tago; la dato estas iu ajn tago de ĝi, <code>2026-11-25</code>), <code>year</code> (jaro, <code>2026</code>). <code>mon</code> aŭ <code>sun</code>: la unua tago de la semajno. Sen dato: hodiaŭ</td></tr>
-        <tr><td>Krado, 5 mm</td><td><code>{{grid}}</code></td></tr>
-        <tr><td>Punktoj, 5 mm</td><td><code>{{dots}}</code></td></tr>
-        <tr><td>Linioj, 7 mm</td><td><code>{{lines}}</code></td></tr>
+        <tr><td>Liniigo</td><td><code>{{grid}}</code> krado 5 mm, <code>{{lines}}</code> linioj 7 mm, <code>{{dots}}</code> punktoj 5 mm, <code>{{iso}}</code> izometria krado, <code>{{hex}}</code> sesangula krado. En la panelo ĝi estas unu ero; la specon elektu en la dua menuo</td></tr>
         <tr><td>Kontrollisto</td><td><code>{{checklist}}</code></td></tr>
+        <tr><td>Matrico de Eisenhower</td><td><code>{{eisenhower}}</code>: kvar kestoj laŭ urĝa / grava: fari tuj, plani, delegi, forlasi</td></tr>
+        <tr><td>Decido</td><td><code>{{decision}}</code>: supre linio «Decido», sub ĝi du kolumnoj: por kaj kontraŭ. Vi povas tuj skribi, kion vi decidas: <code>{{decision Translokiĝo al Berlino}}</code></td></tr>
+        <tr><td>Taglibro de dankemo</td><td><code>{{gratitude}}</code>: paĝo por unu tago: dato, pro kio mi dankas, la plej bona momento, humoro (rondigu vizaĝon)</td></tr>
+        <tr><td>Taglibro de humoro</td><td><code>{{mood 2026-11}}</code>: la tagoj de la monato por kolorigi laŭ humoro, kun klarigo de la koloroj</td></tr>
+        <tr><td>Komunaj elspezoj</td><td><code>{{expenses 3}}</code> aŭ <code>{{expenses Anna, Boris, Vika}}</code>: 2–4 homoj. En ĉiu linio: kio, sumo, kiu pagis kaj markoj por tiuj, kiuj dividas ĝin. Sube, saldo por ĉiu: pagis − parto</td></tr>
+        <tr><td>Labirinto</td><td><code>{{maze 483920 medium}}</code>: semo-numero kaj la grandeco (<code>small</code>, <code>medium</code>, <code>large</code>). <b>Nova labirinto</b> desegnas novan</td></tr>
         <tr><td>Rado de la vivo</td><td><code>{{wheel Sano, Kariero, Mono, ...}}</code></td></tr>
         <tr><td>Sudoko</td><td><code>{{sudoku 483920 medium 4}}</code>: semo-numero, la nivelo (<code>easy</code>, <code>medium</code>, <code>hard</code>) kaj kiom po paĝo (1, 2, 4 aŭ 6). Ĉiu havas ekzakte unu solvon. <b>Nova sudoko</b> faras novajn</td></tr>
         <tr><td>Yatzy</td><td><code>{{yatzy 4}}</code>: poentfolio por 1–6 ludantoj; ĉiu linio havas etan sugeston, kiel ĝi kalkuliĝas</td></tr>

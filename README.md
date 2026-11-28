@@ -104,10 +104,14 @@ saved by Export MD, loaded by Import MD and can be edited by hand:
 | Preset | Directive |
 |---|---|
 | Calendar | `{{calendar 2026-11 month mon}}`: view `month`, `3months` (previous, this, next), `week` (`2026-11-25`, any day of it; a row per day) or `year` (`2026`); `mon` / `sun` = first day of the week (default: the browser's locale); no date = today |
-| Grid, 5mm | `{{grid}}` |
-| Dot grid, 5mm | `{{dots}}` |
-| Lined, 7mm | `{{lines}}` |
+| Paper | `{{grid}}` (5mm), `{{lines}}` (7mm), `{{dots}}` (5mm), `{{iso}}` (isometric), `{{hex}}` (hexagons): one menu entry, the kind picked in a second menu |
 | Checklist | `{{checklist}}` |
+| Eisenhower matrix | `{{eisenhower}}` (urgent / important: do now, schedule, delegate, drop) |
+| Decision | `{{decision}}` or `{{decision Move to Berlin}}` (a "Decision" line or the given title, then pros and cons columns) |
+| Gratitude journal | `{{gratitude}}` (one day: date, grateful for, best moment, mood faces) |
+| Mood journal | `{{mood 2026-11}}` (the month's days to color, with a color key) |
+| Shared expenses | `{{expenses 3}}` or `{{expenses Anna, Boris, Vika}}` (2-4 people; what, amount, who paid, ticks for who shares; balance per person = paid − share) |
+| Maze | `{{maze 483920 medium}}` (seed; `small` / `medium` / `large`; a perfect maze, top-left in, bottom-right out) |
 | Wheel of life | `{{wheel Health, Career, Money, ...}}` (3+ comma-separated areas) |
 | Sudoku | `{{sudoku 483920 medium 4}}` (seed; `easy` / `medium` / `hard`; 1, 2, 4 or 6 per page; always one solution) |
 | Yatzy score sheet | `{{yatzy 4}}` (1-6 players; each row has a small scoring hint) |

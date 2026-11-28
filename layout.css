@@ -532,6 +532,300 @@ body {
   border-top: 0.4mm solid #444;
 }
 
+/* Shared titles of the newer presets. */
+.cell-content .eis-title,
+.cell-content .jr-title,
+.cell-content .maze-title,
+.cell-content .exp-title {
+  flex: 0 0 auto;
+  font-weight: bold;
+  font-size: 3.4mm;
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+/* Eisenhower matrix: axis labels on top and on the left, 2 x 2 boxes. */
+.cell-content .preset-eisenhower,
+.cell-content .preset-journal,
+.cell-content .preset-maze,
+.cell-content .preset-expenses {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-content .eis-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 4.5mm 1fr 1fr;
+  grid-template-rows: auto 1fr 1fr;
+  gap: 1mm;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.cell-content .eis-axis {
+  font-size: 2.3mm;
+  font-weight: bold;
+  color: #666;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cell-content .eis-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cell-content .eis-side span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.cell-content .eis-q {
+  border: 0.3mm solid #888;
+  border-radius: 1mm;
+  padding: 1mm 1.2mm;
+}
+
+.cell-content .eis-q-title {
+  font-size: 2.4mm;
+  font-weight: bold;
+}
+
+.cell-content .eis-q1 {
+  border-color: #222;
+  border-width: 0.5mm;
+}
+
+/* Journal: labelled writing lines that share the page height. */
+.cell-content .jr-date,
+.cell-content .exp-names {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2.6mm;
+  margin-bottom: 2mm;
+}
+
+.cell-content .jr-blank {
+  flex: 1 1 auto;
+  height: 4mm;
+  border-bottom: 0.2mm solid #888;
+}
+
+.cell-content .jr-label {
+  flex: 0 0 auto;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2.6mm;
+  font-weight: bold;
+  margin-top: 1.5mm;
+}
+
+.cell-content .jr-lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-content .jr-lines:nth-of-type(odd),
+.cell-content .jr-lines {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.cell-content .jr-line {
+  flex: 1 1 0;
+  min-height: 0;
+  border-bottom: 0.2mm solid #a5a5a5;
+  display: flex;
+  align-items: flex-end;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2.4mm;
+  color: #888;
+  padding-bottom: 0.4mm;
+}
+
+.cell-content .mood-faces {
+  flex: 0 0 auto;
+  width: 60%;
+  margin: 1.5mm auto 0;
+  fill: none;
+  stroke: #444;
+  stroke-width: 0.4;
+  stroke-linecap: round;
+}
+
+.cell-content .mood-faces .mood-eye {
+  fill: #444;
+  stroke: none;
+}
+
+/* Decision: the topic, then pros and cons side by side. */
+.cell-content .preset-decision {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-content .dec-topic {
+  flex: 0 0 auto;
+  font-weight: bold;
+  font-size: 3.4mm;
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+.cell-content .dec-blank-topic {
+  font-size: 3mm;
+}
+
+.cell-content .dec-cols {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm;
+}
+
+.cell-content .dec-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cell-content .dec-head {
+  flex: 0 0 auto;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2.8mm;
+  font-weight: bold;
+  text-align: center;
+  padding-bottom: 1mm;
+  border-bottom: 0.4mm solid #444;
+}
+
+.cell-content .dec-col .jr-lines {
+  flex: 1 1 auto;
+}
+
+/* Mood: a month grid whose days get colored, and the color key. */
+.cell-content .preset-mood .cal-day {
+  color: #999;
+}
+
+.cell-content .mood-legend {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1mm 2.5mm;
+  margin-top: 2mm;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2.2mm;
+}
+
+.cell-content .mood-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8mm;
+}
+
+.cell-content .mood-swatch {
+  width: 3mm;
+  height: 3mm;
+  border: 0.25mm solid #555;
+  border-radius: 0.5mm;
+}
+
+/* Maze: the drawing scales to the page. */
+.cell-content .preset-maze .preset-svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+/* Shared expenses: the spending table takes the free height, the balance
+   table and the hint sit under it. */
+.cell-content .exp-names {
+  flex-wrap: wrap;
+  gap: 1mm 3mm;
+}
+
+.cell-content .exp-name {
+  flex: 1 1 40%;
+  display: flex;
+  align-items: baseline;
+  gap: 1mm;
+}
+
+.cell-content .exp-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2.1mm;
+  line-height: 1.1;
+}
+
+.cell-content .exp-main {
+  flex: 1 1 auto;
+}
+
+.cell-content .exp-balance {
+  flex: 0 0 auto;
+  margin-top: 2mm;
+}
+
+.cell-content .exp-table th,
+.cell-content .exp-table td {
+  border: 0.2mm solid #999;
+  padding: 0.3mm 0.6mm;
+  text-align: center;
+  font-weight: normal;
+  overflow: hidden;
+}
+
+.cell-content .exp-table th {
+  background: #eee;
+  color: #444;
+}
+
+.cell-content .exp-balance td,
+.cell-content .exp-balance th {
+  height: 4.6mm;
+}
+
+.cell-content .exp-what {
+  width: 34%;
+}
+
+.cell-content .exp-amount {
+  width: 17%;
+}
+
+.cell-content .exp-paid {
+  width: 15%;
+}
+
+.cell-content .exp-tick span {
+  display: inline-block;
+  width: 2.4mm;
+  height: 2.4mm;
+  border: 0.2mm solid #888;
+  border-radius: 0.3mm;
+  vertical-align: middle;
+}
+
+.cell-content .exp-hint {
+  flex: 0 0 auto;
+  margin-top: 1mm;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.8mm;
+  color: #888;
+  line-height: 1.25;
+}
+
 /* 100 hours / 100 days tracker: Start/End fields, then a 10 x 10 grid (one
    cell per hour or day) to shade in with a pencil. The SVG uses ~mm
    viewBox units. */

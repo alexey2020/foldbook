@@ -247,7 +247,7 @@
     var first = new Date(year, month, 1);
     var daysInMonth = new Date(year, month + 1, 0).getDate();
     var monthName = dateFmt(lang, { month: "long" }).format(first);
-    var title = capitalize(monthName) + (opts.noYear ? "" : " " + year);
+    var title = opts.title || capitalize(monthName) + (opts.noYear ? "" : " " + year);
     var weekdayFmt = dateFmt(lang, { weekday: opts.narrow ? "narrow" : "short" });
     var head = "";
     for (var i = 0; i < 7; i++) {
@@ -1084,6 +1084,281 @@
     return presetBlock("yatzy", '<div class="yatzy-title">Yatzy</div>' + html + "</table>");
   }
 
+  // Words for the newer presets, per site language (English fallback).
+  function words(table) {
+    return table[uiLang()] || table.en;
+  }
+
+  // --- Isometric and hex grids: like the other rulings, plain vector
+  // lines (no <pattern>), drawn in a nested SVG whose user unit is 1 mm and
+  // which covers the largest page (75 x 105 mm); the outer SVG clips it.
+  function mmSvg(inner) {
+    return rulingSvg('<svg width="75mm" height="105mm" viewBox="0 0 75 105" overflow="visible">' + inner + "</svg>");
+  }
+
+  // Triangles of side 6 mm: vertical lines plus two families at +/-30 deg.
+  function renderIso() {
+    var a = 6;
+    var dx = a * Math.sqrt(3) / 2;
+    var rise = 75 * Math.tan(Math.PI / 6);
+    var d = "";
+    for (var x = 0; x <= 75; x += dx) d += "M" + x.toFixed(2) + " 0V105";
+    for (var c = -rise; c <= 105 + rise; c += a) {
+      d += "M0 " + c.toFixed(2) + "L75 " + (c + rise).toFixed(2);
+      d += "M0 " + c.toFixed(2) + "L75 " + (c - rise).toFixed(2);
+    }
+    return presetBlock("iso", mmSvg('<path d="' + d + '" fill="none" stroke="' + RULE_COLOR + '" stroke-width="0.2"/>'));
+  }
+
+  // Pointy-top hexagons, 4 mm side.
+  function renderHex() {
+    var r = 4;
+    var w = Math.sqrt(3) * r;
+    var d = "";
+    for (var row = 0; row * 1.5 * r <= 105 + r; row++) {
+      for (var col = -1; col * w <= 75 + w; col++) {
+        var cx = col * w + (row % 2 ? w / 2 : 0);
+        var cy = row * 1.5 * r;
+        for (var k = 0; k < 6; k++) {
+          var ang = Math.PI / 180 * (60 * k - 90);
+          d += (k ? "L" : "M") + (cx + r * Math.cos(ang)).toFixed(2) + " " + (cy + r * Math.sin(ang)).toFixed(2);
+        }
+        d += "Z";
+      }
+    }
+    return presetBlock("hex", mmSvg('<path d="' + d + '" fill="none" stroke="' + RULE_COLOR + '" stroke-width="0.2"/>'));
+  }
+
+  // --- Eisenhower matrix: urgent / important, four boxes to write in.
+  var EISENHOWER_TEXT = {
+    en: { title: "Eisenhower matrix", urgent: "Urgent", notUrgent: "Not urgent", important: "Important",
+      notImportant: "Not important", q: ["Do now", "Schedule", "Delegate", "Drop"] },
+    ru: { title: "Матрица Эйзенхауэра", urgent: "Срочно", notUrgent: "Не срочно", important: "Важно",
+      notImportant: "Не важно", q: ["Сделать сейчас", "Запланировать", "Поручить другим", "Отказаться"] },
+    eo: { title: "Matrico de Eisenhower", urgent: "Urĝa", notUrgent: "Ne urĝa", important: "Grava",
+      notImportant: "Ne grava", q: ["Fari tuj", "Plani", "Delegi", "Forlasi"] },
+  };
+
+  function renderEisenhower() {
+    var w = words(EISENHOWER_TEXT);
+    var q = function (i) {
+      return '<div class="eis-q eis-q' + (i + 1) + '"><div class="eis-q-title">' + escapeHtml(w.q[i]) + "</div></div>";
+    };
+    return presetBlock("eisenhower",
+      '<div class="eis-title">' + escapeHtml(w.title) + "</div>" +
+      '<div class="eis-grid"><div></div>' +
+      '<div class="eis-axis">' + escapeHtml(w.urgent) + '</div><div class="eis-axis">' + escapeHtml(w.notUrgent) + "</div>" +
+      '<div class="eis-axis eis-side"><span>' + escapeHtml(w.important) + "</span></div>" + q(0) + q(1) +
+      '<div class="eis-axis eis-side"><span>' + escapeHtml(w.notImportant) + "</span></div>" + q(2) + q(3) +
+      "</div>");
+  }
+
+  // --- Decision: what is being decided (written on the line, or given as
+  // {{decision Move to Berlin}}), then pros and cons side by side.
+  var DECISION_TEXT = {
+    en: { decision: "Decision", pros: "Pros", cons: "Cons" },
+    ru: { decision: "Решение", pros: "Плюсы", cons: "Минусы" },
+    eo: { decision: "Decido", pros: "Por", cons: "Kontraŭ" },
+  };
+
+  function renderDecision(arg) {
+    var w = words(DECISION_TEXT);
+    var topic = (arg || "").trim();
+    var lines = new Array(16).join('<div class="jr-line"></div>');
+    var column = function (label, cls) {
+      return '<div class="dec-col ' + cls + '"><div class="dec-head">' + escapeHtml(label) + '</div><div class="jr-lines">' + lines + "</div></div>";
+    };
+    return presetBlock("decision",
+      (topic
+        ? '<div class="dec-topic">' + inlineMd(escapeHtml(topic)) + "</div>"
+        : '<div class="jr-date dec-blank-topic"><b>' + escapeHtml(w.decision) + '</b><span class="jr-blank"></span></div>') +
+      '<div class="dec-cols">' + column("+ " + w.pros, "dec-pros") + column("− " + w.cons, "dec-cons") + "</div>");
+  }
+
+  // --- Journal: a gratitude page for one day, or a month of moods.
+  var JOURNAL_TEXT = {
+    en: { gratitude: "Gratitude journal", date: "Date", thanks: "I'm grateful for:", best: "Best moment of the day:",
+      mood: "Mood:", moodTitle: "Mood", levels: ["Great", "Good", "Okay", "Bad", "Awful"] },
+    ru: { gratitude: "Дневник благодарности", date: "Дата", thanks: "Я благодарю за:", best: "Лучший момент дня:",
+      mood: "Настроение:", moodTitle: "Настроение", levels: ["Отлично", "Хорошо", "Нормально", "Плохо", "Ужасно"] },
+    eo: { gratitude: "Taglibro de dankemo", date: "Dato", thanks: "Mi dankas pro:", best: "Plej bona momento de la tago:",
+      mood: "Humoro:", moodTitle: "Humoro", levels: ["Bonege", "Bone", "Mezbone", "Malbone", "Terure"] },
+  };
+
+  // Five faces from a big smile (0) to a frown (4), to circle one.
+  function moodFaces() {
+    var svg = "";
+    for (var i = 0; i < 5; i++) {
+      var cx = 5 + i * 11;
+      var bend = [2.2, 1.1, 0, -1.1, -2.2][i];
+      var my = 6.4 - bend / 2;
+      svg += '<circle cx="' + cx + '" cy="5" r="4.2"/>' +
+        '<circle cx="' + (cx - 1.5) + '" cy="3.8" r="0.45" class="mood-eye"/><circle cx="' + (cx + 1.5) + '" cy="3.8" r="0.45" class="mood-eye"/>' +
+        '<path d="M' + (cx - 2) + " " + my + "Q" + cx + " " + (my + bend) + " " + (cx + 2) + " " + my + '"/>';
+    }
+    return '<svg class="mood-faces" viewBox="0 0 55 10" xmlns="http://www.w3.org/2000/svg">' + svg + "</svg>";
+  }
+
+  function renderGratitude() {
+    var w = words(JOURNAL_TEXT);
+    var lines = function (n, numbered) {
+      var out = "";
+      for (var i = 0; i < n; i++) out += '<div class="jr-line">' + (numbered ? (i + 1) + "." : "") + "</div>";
+      return out;
+    };
+    return presetBlock("journal",
+      '<div class="jr-title">' + escapeHtml(w.gratitude) + "</div>" +
+      '<div class="jr-date">' + escapeHtml(w.date) + '<span class="jr-blank"></span></div>' +
+      '<div class="jr-label">' + escapeHtml(w.thanks) + '</div><div class="jr-lines">' + lines(3, true) + "</div>" +
+      '<div class="jr-label">' + escapeHtml(w.best) + '</div><div class="jr-lines">' + lines(2, false) + "</div>" +
+      '<div class="jr-label">' + escapeHtml(w.mood) + "</div>" + moodFaces());
+  }
+
+  // {{mood 2026-11}}: the month's days to color in, and the color key.
+  function renderMood(arg) {
+    var w = words(JOURNAL_TEXT);
+    var m = /^(\d{4})-(\d{1,2})$/.exec((arg || "").trim());
+    var now = new Date();
+    var year = m && +m[2] >= 1 && +m[2] <= 12 ? +m[1] : now.getFullYear();
+    var month = m && +m[2] >= 1 && +m[2] <= 12 ? +m[2] - 1 : now.getMonth();
+    var startDay = firstDayOfWeek(navigator.language || "en") % 7;
+    var monthName = capitalize(dateFmt(uiLang(), { month: "long" }).format(new Date(year, month, 1)));
+    var key = "";
+    w.levels.forEach(function (label) {
+      key += '<span class="mood-key"><span class="mood-swatch"></span>' + escapeHtml(label) + "</span>";
+    });
+    return presetBlock("calendar preset-mood",
+      monthBlock(year, month, startDay, uiLang(), { title: w.moodTitle + " · " + monthName + " " + year }) +
+      '<div class="mood-legend">' + key + "</div>");
+  }
+
+  // --- Maze from a seed: {{maze 483920 medium}}. A depth-first "recursive
+  // backtracker" carves a perfect maze (exactly one path between any two
+  // cells); the way in is at the top left, the way out at the bottom right.
+  var MAZE_SIZES = { small: [7, 10], medium: [11, 15], large: [15, 21] };
+  var MAZE_TEXT = { en: "Maze", ru: "Лабиринт", eo: "Labirinto" };
+
+  function parseMazeArgs(arg) {
+    var opts = { seed: "1", size: "medium" };
+    var seedSet = false;
+    (arg || "").split(/\s+/).filter(Boolean).forEach(function (word) {
+      var lw = word.toLowerCase();
+      if (MAZE_SIZES.hasOwnProperty(lw)) opts.size = lw;
+      else if (!seedSet) {
+        opts.seed = word;
+        seedSet = true;
+      }
+    });
+    return opts;
+  }
+
+  function renderMaze(arg) {
+    var opts = parseMazeArgs(arg);
+    var cols = MAZE_SIZES[opts.size][0];
+    var rows = MAZE_SIZES[opts.size][1];
+    var rand = seededRandom("maze-" + opts.seed + "-" + opts.size);
+    // Walls: right[i] and down[i] for cell i (row-major).
+    var right = [];
+    var down = [];
+    var seen = [];
+    for (var i = 0; i < cols * rows; i++) {
+      right.push(true);
+      down.push(true);
+      seen.push(false);
+    }
+    var stack = [0];
+    seen[0] = true;
+    while (stack.length) {
+      var cur = stack[stack.length - 1];
+      var cx = cur % cols;
+      var cy = Math.floor(cur / cols);
+      var next = [];
+      if (cx > 0 && !seen[cur - 1]) next.push(cur - 1);
+      if (cx < cols - 1 && !seen[cur + 1]) next.push(cur + 1);
+      if (cy > 0 && !seen[cur - cols]) next.push(cur - cols);
+      if (cy < rows - 1 && !seen[cur + cols]) next.push(cur + cols);
+      if (!next.length) {
+        stack.pop();
+        continue;
+      }
+      var n = next[Math.floor(rand() * next.length)];
+      if (n === cur + 1) right[cur] = false;
+      else if (n === cur - 1) right[n] = false;
+      else if (n === cur + cols) down[cur] = false;
+      else down[n] = false;
+      seen[n] = true;
+      stack.push(n);
+    }
+    var u = 10;
+    // Outer border, leaving the entrance (top of the first cell) and the
+    // exit (bottom of the last one) open.
+    var d = "M" + u + " 0H" + cols * u + "V" + rows * u + "M" + (cols - 1) * u + " " + rows * u + "H0V0";
+    for (var c = 0; c < cols * rows; c++) {
+      var x = (c % cols) * u;
+      var y = Math.floor(c / cols) * u;
+      if (right[c] && c % cols < cols - 1) d += "M" + (x + u) + " " + y + "V" + (y + u);
+      if (down[c] && Math.floor(c / cols) < rows - 1) d += "M" + x + " " + (y + u) + "H" + (x + u);
+    }
+    return presetBlock("maze",
+      '<div class="maze-title">' + escapeHtml(words(MAZE_TEXT)) + " · " + escapeHtml(opts.seed) + "</div>" +
+      '<svg class="preset-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-1.5 -1.5 ' + (cols * u + 3) + " " + (rows * u + 3) +
+      '" preserveAspectRatio="xMidYMin meet"><path d="' + d + '" fill="none" stroke="#222" stroke-width="1.2" stroke-linecap="square"/></svg>');
+  }
+
+  // --- Shared expenses, Splitwise-style: {{expenses 3}} or
+  // {{expenses Anna, Boris, Vika}}. Each row: what, amount, who paid, and a
+  // box per person who shares it. Below, a balance per person.
+  var EXPENSES_TEXT = {
+    en: { title: "Shared expenses", what: "What", amount: "Amount", paid: "Paid by", split: "Split between",
+      who: "Who", paidSum: "Paid", share: "Share", balance: "Balance", letters: "ABCD",
+      hint: "Share = amount ÷ people ticked. Balance = paid − share: + gets money back, − owes." },
+    ru: { title: "Общие траты", what: "Что", amount: "Сумма", paid: "Платил", split: "Делят",
+      who: "Кто", paidSum: "Заплатил", share: "Доля", balance: "Итог", letters: "АБВГ",
+      hint: "Доля = сумма ÷ сколько человек отмечено. Итог = заплатил − доля: плюс — ему вернут, минус — он должен." },
+    eo: { title: "Komunaj elspezoj", what: "Kio", amount: "Sumo", paid: "Pagis", split: "Dividas",
+      who: "Kiu", paidSum: "Pagis", share: "Parto", balance: "Saldo", letters: "ABCD",
+      hint: "Parto = sumo ÷ markitaj homoj. Saldo = pagis − parto: + ricevos monon, − ŝuldas." },
+  };
+
+  function parseExpensesArgs(arg) {
+    var text = (arg || "").trim();
+    var names = text.indexOf(",") !== -1 ? text.split(",").map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 4) : [];
+    if (names.length >= 2) return { count: names.length, names: names };
+    var n = parseInt(text, 10);
+    return { count: n >= 2 && n <= 4 ? n : 3, names: [] };
+  }
+
+  function renderExpenses(arg) {
+    var opts = parseExpensesArgs(arg);
+    var w = words(EXPENSES_TEXT);
+    var labels = [];
+    for (var p = 0; p < opts.count; p++) labels.push(opts.names[p] || w.letters.charAt(p));
+    var head = labels.map(function (l) {
+      return '<th class="exp-person">' + escapeHtml(opts.names.length ? l.slice(0, 3) : l) + "</th>";
+    }).join("");
+    var row = "<tr><td></td><td></td><td></td>" + new Array(opts.count + 1).join('<td class="exp-tick"><span></span></td>') + "</tr>";
+    var namesLine = "";
+    if (!opts.names.length) {
+      namesLine = '<div class="exp-names">' + labels.map(function (l) {
+        return '<span class="exp-name"><b>' + l + '</b><span class="jr-blank"></span></span>';
+      }).join("") + "</div>";
+    }
+    var balance = '<table class="exp-table exp-balance"><tr><th>' + escapeHtml(w.who) + "</th><th>" + escapeHtml(w.paidSum) +
+      "</th><th>" + escapeHtml(w.share) + "</th><th>" + escapeHtml(w.balance) + "</th></tr>";
+    labels.forEach(function (l) {
+      balance += "<tr><th>" + escapeHtml(l) + "</th><td></td><td></td><td></td></tr>";
+    });
+    balance += "</table>";
+    return presetBlock("expenses",
+      '<div class="exp-title">' + escapeHtml(w.title) + "</div>" + namesLine +
+      '<table class="exp-table exp-main"><colgroup><col class="exp-what"><col class="exp-amount"><col class="exp-paid">' +
+      new Array(opts.count + 1).join('<col class="exp-col-person">') + "</colgroup>" +
+      '<tr><th rowspan="2">' + escapeHtml(w.what) + '</th><th rowspan="2">' + escapeHtml(w.amount) + '</th><th rowspan="2">' +
+      escapeHtml(w.paid) + '</th><th colspan="' + opts.count + '">' + escapeHtml(w.split) + "</th></tr><tr>" + head + "</tr>" +
+      new Array(13).join(row) + "</table>" + balance +
+      '<div class="exp-hint">' + escapeHtml(w.hint) + "</div>");
+  }
+
   var DIRECTIVES = {
     hours: function (arg) {
       return renderTracker("hours", arg);
@@ -1100,6 +1375,14 @@
     mandala: renderMandala,
     sudoku: renderSudoku,
     yatzy: renderYatzy,
+    iso: renderIso,
+    hex: renderHex,
+    eisenhower: renderEisenhower,
+    decision: renderDecision,
+    gratitude: renderGratitude,
+    mood: renderMood,
+    maze: renderMaze,
+    expenses: renderExpenses,
   };
 
   // The text a preset puts on a page (what "Apply preset" inserts).
@@ -1108,14 +1391,30 @@
     yatzy: function () {
       return "{{yatzy " + document.getElementById("yatzy-players").value + "}}";
     },
-    grid: function () {
-      return "{{grid}}";
+    // One menu entry for all the rulings; the kind is the directive name.
+    paper: function () {
+      return "{{" + document.getElementById("paper-kind").value + "}}";
     },
-    dots: function () {
-      return "{{dots}}";
+    eisenhower: function () {
+      return "{{eisenhower}}";
     },
-    lines: function () {
-      return "{{lines}}";
+    decision: function () {
+      return "{{decision}}";
+    },
+    journal: function () {
+      var kind = document.getElementById("journal-kind").value;
+      if (kind === "mood") {
+        var month = document.getElementById("journal-month").value;
+        return "{{mood" + (month ? " " + month : "") + "}}";
+      }
+      return "{{gratitude}}";
+    },
+    maze: function () {
+      // A new seed each time, like the sudoku.
+      return "{{maze " + (100000 + Math.floor(Math.random() * 900000)) + " " + document.getElementById("maze-size").value + "}}";
+    },
+    expenses: function () {
+      return "{{expenses " + document.getElementById("expenses-people").value + "}}";
     },
     checklist: function () {
       return "{{checklist}}";
@@ -1194,6 +1493,10 @@
     document.getElementById("mandala-options").hidden = key !== "mandala";
     document.getElementById("sudoku-options").hidden = key !== "sudoku";
     document.getElementById("yatzy-options").hidden = key !== "yatzy";
+    ["paper", "journal", "maze", "expenses"].forEach(function (k) {
+      document.getElementById(k + "-options").hidden = key !== k;
+    });
+    document.getElementById("journal-month").hidden = document.getElementById("journal-kind").value !== "mood";
     syncApplyButton();
     document.getElementById("calendar-options").hidden = key !== "calendar";
     var calInput = CAL_PERIOD_INPUT[document.getElementById("cal-view").value];
@@ -1509,7 +1812,11 @@
 
   // Which preset (if any) the page's text is: the preset menu shows it, so
   // picking any other entry is a change, and so applies.
-  var DIRECTIVE_PRESET = { hours: "tracker", days: "tracker" };
+  var DIRECTIVE_PRESET = {
+    hours: "tracker", days: "tracker",
+    grid: "paper", dots: "paper", lines: "paper", iso: "paper", hex: "paper",
+    gratitude: "journal", mood: "journal",
+  };
 
   function presetKeyOf(text) {
     var m = DIRECTIVE_RE.exec(text.trim());
@@ -1540,6 +1847,15 @@
     if (key === "yatzy") {
       document.getElementById("yatzy-players").value = String(parseYatzyPlayers(DIRECTIVE_RE.exec(text.trim())[2]));
     }
+    var dm = DIRECTIVE_RE.exec(text.trim());
+    if (key === "paper") document.getElementById("paper-kind").value = dm[1].toLowerCase();
+    if (key === "journal") {
+      document.getElementById("journal-kind").value = dm[1].toLowerCase();
+      var mm = /^(\d{4})-(\d{1,2})$/.exec((dm[2] || "").trim());
+      if (mm) document.getElementById("journal-month").value = mm[1] + "-" + pad2(+mm[2]);
+    }
+    if (key === "maze") document.getElementById("maze-size").value = parseMazeArgs(dm[2]).size;
+    if (key === "expenses") document.getElementById("expenses-people").value = String(parseExpensesArgs(dm[2]).count);
     syncPresetOptions();
   }
 
@@ -2088,9 +2404,16 @@
     document.getElementById("btn-apply-preset").addEventListener("click", applyPresetToCell);
     document.getElementById("btn-new-mandala").addEventListener("click", applyPresetToCell);
     document.getElementById("btn-new-sudoku").addEventListener("click", applyPresetToCell);
-    ["sudoku-level", "sudoku-count", "yatzy-players"].forEach(function (id) {
+    document.getElementById("btn-new-maze").addEventListener("click", applyPresetToCell);
+    ["sudoku-level", "sudoku-count", "yatzy-players", "paper-kind", "maze-size", "expenses-people", "journal-month"].forEach(function (id) {
       document.getElementById(id).addEventListener("change", applyPresetToCell);
     });
+    document.getElementById("journal-kind").addEventListener("change", function () {
+      syncPresetOptions();
+      applyPresetToCell();
+    });
+    var thisMonth = new Date();
+    document.getElementById("journal-month").value = thisMonth.getFullYear() + "-" + pad2(thisMonth.getMonth() + 1);
     var today = new Date();
     setCalendarInputs(today.getFullYear(), today.getMonth(), today.getDate());
     document.getElementById("cal-start").value = localeWeekStart();
