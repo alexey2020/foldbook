@@ -122,9 +122,9 @@ window.FOLDLET_I18N = {
     "Done": "Готово",
 
     // Newer presets
-    "Paper: grid, lines, dots…": "Разлиновка: клетка, линейка, точки…",
+    "Paper": "Разлиновка",
+    "Clear page {n}?": "Очистить стр. {n}?",
     "Eisenhower matrix": "Матрица Эйзенхауэра",
-    "Journal: gratitude, mood": "Дневник: благодарность, настроение",
     "Shared expenses": "Общие траты",
     "Maze": "Лабиринт",
     "Ruling": "Разлиновка",
@@ -144,7 +144,7 @@ window.FOLDLET_I18N = {
     "2 people": "2 человека",
     "3 people": "3 человека",
     "4 people": "4 человека",
-    "Decision: pros and cons": "Решение: плюсы и минусы",
+    "Decision": "Решение",
   },
 
   eo: {
@@ -266,9 +266,9 @@ window.FOLDLET_I18N = {
     "Done": "Preta",
 
     // Newer presets
-    "Paper: grid, lines, dots…": "Liniigo: krado, linioj, punktoj…",
+    "Paper": "Liniigo",
+    "Clear page {n}?": "Ĉu malplenigi paĝon {n}?",
     "Eisenhower matrix": "Matrico de Eisenhower",
-    "Journal: gratitude, mood": "Taglibro: dankemo, humoro",
     "Shared expenses": "Komunaj elspezoj",
     "Maze": "Labirinto",
     "Ruling": "Liniigo",
@@ -288,6 +288,6 @@ window.FOLDLET_I18N = {
     "2 people": "2 homoj",
     "3 people": "3 homoj",
     "4 people": "4 homoj",
-    "Decision: pros and cons": "Decido: por kaj kontraŭ",
+    "Decision": "Decido",
   },
 };

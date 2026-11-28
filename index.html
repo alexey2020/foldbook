@@ -81,11 +81,11 @@
           <select id="preset-select" aria-label="Preset">
             <option value="">No preset</option>
             <option value="calendar">Calendar</option>
-            <option value="paper">Paper: grid, lines, dots…</option>
+            <option value="paper">Paper</option>
             <option value="checklist">Checklist</option>
             <option value="eisenhower">Eisenhower matrix</option>
-            <option value="decision">Decision: pros and cons</option>
-            <option value="journal">Journal: gratitude, mood</option>
+            <option value="decision">Decision</option>
+            <option value="journal">Journal</option>
             <option value="tracker">100 hours / days</option>
             <option value="expenses">Shared expenses</option>
             <option value="wheel">Wheel of life</option>
@@ -369,7 +369,7 @@
       </ul>
 
       <h2>Шаблоны страниц</h2>
-      <p>Щёлкните по странице (она подсветится, а её номер появится в заголовке панели <b>Шаблон</b>), затем выберите шаблон — он сразу появится на странице. Если на странице уже есть свой текст, Foldlet спросит, заменить ли его (галочка <b>Спрашивать перед заменой текста шаблоном</b> в панели «Вид»); страницу, на которой только шаблон, он меняет без вопросов. Выбор в списке остаётся, когда вы переходите на страницу без шаблона: чтобы поставить тот же шаблон и туда, нажмите <b>Применить к стр. N</b>. Шаблон — это одна строка в тексте страницы; её можно поправить вручную, и она сохраняется в .md.</p>
+      <p>Щёлкните по странице (она подсветится, а её номер появится в заголовке панели <b>Шаблон</b>), затем выберите шаблон — он сразу появится на странице. Если на странице уже есть свой текст, Foldlet спросит, заменить ли его (галочка <b>Спрашивать перед заменой текста шаблоном</b> в панели «Вид»); страницу, на которой только шаблон, он меняет без вопросов. Выбор в списке остаётся, когда вы переходите на страницу без шаблона: чтобы поставить тот же шаблон и туда, нажмите <b>Применить к стр. N</b>. <b>Без шаблона</b> очищает страницу. Шаблон — это одна строка в тексте страницы; её можно поправить вручную, и она сохраняется в .md.</p>
       <table>
         <tr><th>Шаблон</th><th>Строка</th></tr>
         <tr><td>Календарь</td><td><code>{{calendar 2026-11 month mon}}</code>. Вид: <code>month</code> (месяц), <code>3months</code> (прошлый, этот и следующий), <code>week</code> (неделя, по строке на день; дата — любой её день, <code>2026-11-25</code>), <code>year</code> (год, <code>2026</code>). <code>mon</code> или <code>sun</code> — с какого дня начинается неделя. Без даты — сегодня</td></tr>
@@ -475,7 +475,7 @@
       </ul>
 
       <h2>Page presets</h2>
-      <p>Click a page (it gets highlighted and its number shows in the <b>Preset</b> panel's heading), then pick a layout: it appears on the page right away. If the page has text of its own, Foldlet asks before replacing it (the <b>Ask before a preset replaces text</b> box in the View panel); a page holding only a preset is swapped without asking. The choice stays when you move to a page without a preset: press <b>Apply to page N</b> to put the same one there. A preset is one line in the page's text: you can edit it by hand, and it's saved in the .md.</p>
+      <p>Click a page (it gets highlighted and its number shows in the <b>Preset</b> panel's heading), then pick a layout: it appears on the page right away. If the page has text of its own, Foldlet asks before replacing it (the <b>Ask before a preset replaces text</b> box in the View panel); a page holding only a preset is swapped without asking. The choice stays when you move to a page without a preset: press <b>Apply to page N</b> to put the same one there. <b>No preset</b> clears the page. A preset is one line in the page's text: you can edit it by hand, and it's saved in the .md.</p>
       <table>
         <tr><th>Preset</th><th>Line</th></tr>
         <tr><td>Calendar</td><td><code>{{calendar 2026-11 month mon}}</code>. View: <code>month</code>, <code>3months</code> (previous, this and next), <code>week</code> (a row per day; the date is any day of it, <code>2026-11-25</code>), <code>year</code> (<code>2026</code>). <code>mon</code> or <code>sun</code>: the first day of the week. No date = today</td></tr>
@@ -581,7 +581,7 @@
       </ul>
 
       <h2>Ŝablonoj de paĝoj</h2>
-      <p>Alklaku paĝon (ĝi estas emfazita, kaj ĝia numero aperas en la titolo de la panelo <b>Ŝablono</b>), poste elektu aranĝon: ĝi tuj aperas sur la paĝo. Se la paĝo havas propran tekston, Foldlet demandas antaŭ ol anstataŭigi ĝin (la skatolo <b>Demandi antaŭ ol ŝablono anstataŭigas tekston</b> en la panelo Vido); paĝon kun nur ŝablono ĝi ŝanĝas sen demando. La elekto restas, kiam vi iras al paĝo sen ŝablono: premu <b>Apliki al paĝo N</b> por meti la saman ankaŭ tien. Ŝablono estas unu linio en la teksto de la paĝo: vi povas redakti ĝin mane, kaj ĝi konserviĝas en la .md.</p>
+      <p>Alklaku paĝon (ĝi estas emfazita, kaj ĝia numero aperas en la titolo de la panelo <b>Ŝablono</b>), poste elektu aranĝon: ĝi tuj aperas sur la paĝo. Se la paĝo havas propran tekston, Foldlet demandas antaŭ ol anstataŭigi ĝin (la skatolo <b>Demandi antaŭ ol ŝablono anstataŭigas tekston</b> en la panelo Vido); paĝon kun nur ŝablono ĝi ŝanĝas sen demando. La elekto restas, kiam vi iras al paĝo sen ŝablono: premu <b>Apliki al paĝo N</b> por meti la saman ankaŭ tien. <b>Sen ŝablono</b> malplenigas la paĝon. Ŝablono estas unu linio en la teksto de la paĝo: vi povas redakti ĝin mane, kaj ĝi konserviĝas en la .md.</p>
       <table>
         <tr><th>Ŝablono</th><th>Linio</th></tr>
         <tr><td>Kalendaro</td><td><code>{{calendar 2026-11 month mon}}</code>. Vido: <code>month</code> (monato), <code>3months</code> (la antaŭa, ĉi tiu kaj la sekva), <code>week</code> (semajno, po linio por tago; la dato estas iu ajn tago de ĝi, <code>2026-11-25</code>), <code>year</code> (jaro, <code>2026</code>). <code>mon</code> aŭ <code>sun</code>: la unua tago de la semajno. Sen dato: hodiaŭ</td></tr>

@@ -1786,16 +1786,20 @@
   // panel's "Ask before replacing text" decides.
   function applyPresetToCell() {
     var key = document.getElementById("preset-select").value;
-    if (!PRESETS[key]) return;
+    // "No preset" clears the page.
+    var clear = key === "";
+    if (!clear && !PRESETS[key]) return;
     var slot = selectedSlot();
     var el = cellEl(slot.side, slot.name);
+    if (clear && !el.value.trim()) return;
     var onlyPreset = DIRECTIVE_RE.test(el.value.trim());
+    var question = clear ? "Clear page {n}?" : "Replace the current text on page {n} with this preset?";
     if (el.value.trim() && !onlyPreset && document.getElementById("ask-replace").checked &&
-        !confirm(t("Replace the current text on page {n} with this preset?", PAGE_NUMBERS[slot.side][slot.name]))) {
+        !confirm(t(question, PAGE_NUMBERS[slot.side][slot.name]))) {
       syncPresetSelect();
       return;
     }
-    el.value = PRESETS[key]();
+    el.value = clear ? "" : PRESETS[key]();
     renderCell(slot.side, slot.name);
     syncApplyButton();
   }

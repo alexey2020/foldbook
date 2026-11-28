@@ -97,7 +97,8 @@ panel's heading), choose a **Preset**, and it fills that page with a ready-made 
 away; changing a preset's options updates the page too. A page with text
 of its own is replaced only after a confirmation (unless **Ask before a
 preset replaces text** in the View panel is unchecked); a page holding
-only a preset line is swapped without asking. The chosen preset stays when you click a page
+only a preset line is swapped without asking. **No preset** clears the page
+(same rule: it asks first if the page has text of its own). The chosen preset stays when you click a page
 without one; **Apply to page N** then puts it there too. A preset is just one directive line in the page's text, so it is
 saved by Export MD, loaded by Import MD and can be edited by hand:
 
